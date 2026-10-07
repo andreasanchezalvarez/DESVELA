@@ -53,7 +53,7 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 </aside>
 <main>
 <section id="overview" class="view active">
- <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.1</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
+ <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312A6</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
  <div class="metrics">
   <div class="metric"><small>Revenue analizado</small><strong id="mRevenue">—</strong><em>según datos disponibles</em></div>
   <div class="metric"><small>Impacto potencial</small><strong id="mImpact">—</strong><em>no equivale a pérdida confirmada</em></div>
@@ -259,8 +259,15 @@ function analyze(){
 }
 function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
-function save(){localStorage.setItem("desvela-xray",JSON.stringify(state))}
-function load(){try{const x=JSON.parse(localStorage.getItem("desvela-xray"));if(x)Object.assign(state,x)}catch(e){}}
+const XRAY_BUILD="1312A6";
+function save(){localStorage.setItem("desvela-xray",JSON.stringify({...state,_build:XRAY_BUILD}))}
+function load(){
+ try{
+  const x=JSON.parse(localStorage.getItem("desvela-xray"));
+  if(x&&x._build===XRAY_BUILD)Object.assign(state,x);
+  else localStorage.removeItem("desvela-xray");
+ }catch(e){localStorage.removeItem("desvela-xray")}
+}
 function readFile(file){const reader=new FileReader();reader.onload=e=>{try{let wb;if(file.name.toLowerCase().endsWith(".csv")){const text=e.target.result;wb=XLSX.read(text,{type:"string"})}else{wb=XLSX.read(e.target.result,{type:"array"})}const ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:""});state.rows=rows;state.fields=rows.length?Object.keys(rows[0]):[];state.mapping={};contract().forEach(([name])=>{const match=suggestField(name);if(match)state.mapping[name]=match});state.leaks=[];state.gaps=[];state.actions=[];state.revenue=null;state.company=file.name.replace(/\.(csv|xlsx|xls)$/i,"");document.getElementById("fileInfo").innerHTML=`<div class="notice"><strong>${file.name}</strong> · ${fmtNum(rows.length)} registros · ${fmtNum(state.fields.length)} campos · hoja: ${wb.SheetNames[0]}</div>`;document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent=fmtNum(rows.length)+" registros";document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{const match=state.mapping[name]||suggestField(name);return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("")}catch(err){alert("No hemos podido leer el archivo: "+err.message)}};if(file.name.toLowerCase().endsWith(".csv"))reader.readAsText(file);else reader.readAsArrayBuffer(file)}
 document.getElementById("fileInput").onchange=e=>{if(e.target.files[0])readFile(e.target.files[0])};
 document.getElementById("analyze").onclick=()=>{document.querySelectorAll("#mapping select").forEach(s=>{if(s.value)state.mapping[s.dataset.field]=s.value});analyze()};
