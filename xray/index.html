@@ -141,10 +141,12 @@ function go(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.view));
 function money(v){if(v==null||isNaN(v))return"—";return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(v)}
 function renderMap(){
+ const getField=name=>state.mapping[name]||state.fields.find(f=>f.toLowerCase()===name.toLowerCase());
+ const metric=(name,fn)=>{const f=getField(name);return f?state.rows.filter(r=>fn(r[f])).length:null};
  const stages=state.module==="M01"
- ? [["Leads",state.rows.length],["Contacto",count("Contactado",v=>truth(v))],["Propuestas",count("Propuesta",v=>truth(v))],["Ventas",count("Venta",v=>truth(v))],["Cualificación",count("Etapa_actual",v=>String(v).toLowerCase().includes("cual"))],["Seguimiento",count("Motivo_perdida",v=>!v)]]
- : [["Ventas",state.rows.length],["Operativo",count("Fecha_operativo",v=>v)],["Facturación",count("Fecha_factura",v=>v)],["Cobro",count("Fecha_cobro",v=>v)],["Coste real",count("Coste_real",v=>v)],["Incidencias",count("Motivo_perdida",v=>v)]];
- document.getElementById("revenueMap").innerHTML=stages.map((x,i)=>`<div class="stage ${i===2||i===4?'hot':''}"><span class="n">${String(i+1).padStart(2,"0")}</span><b>${fmtNum(x[1])}</b><small>${x[0]}</small></div>`).join("");
+ ? [["Leads",state.rows.length],["Contacto",metric("Contactado",truth)],["Propuestas",metric("Propuesta",truth)],["Ventas",metric("Venta",truth)],["Cualificación",metric("Cualificado",truth)],["Seguimiento",metric("Resultado_contacto",truth)]]
+ : [["Ventas",state.rows.length],["Operativo",metric("Fecha_operativo",v=>truth(v)),["Fecha_operativo"]],["Facturación",metric("Fecha_factura",truth)],["Cobro",metric("Fecha_cobro",truth)],["Coste real",metric("Coste_real",truth)],["Incidencias",metric("Motivo_perdida",truth)]];
+ document.getElementById("revenueMap").innerHTML=stages.map((x,i)=>`<div class="stage ${i===2||i===4?'hot':''}"><span class="n">${String(i+1).padStart(2,"0")}</span><b>${x[1]===null?'—':fmtNum(x[1])}</b><small>${x[0]}</small></div>`).join("");
 }
 function fmtNum(n){return new Intl.NumberFormat("es-ES",{maximumFractionDigits:0}).format(n||0)}
 function truth(v){return v!==undefined&&v!==null&&String(v).trim()!==""&&String(v).toLowerCase()!=="no"&&String(v).toLowerCase()!=="false"&&String(v)!=="0"}
