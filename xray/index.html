@@ -171,7 +171,7 @@ function renderMap(){
  const getField=name=>resolveField(name);
  const metric=(name,fn)=>{const f=getField(name);return f?state.rows.filter(r=>fn(r[f])).length:null};
  const stages=state.module==="M01"
- ? [["Leads",state.rows.length],["Contacto",metric("Contactado",truth)],["Propuestas",metric("Propuesta",truth)],["Ventas",metric("Venta",truth)],["Cualificación",metric("Cualificado",truth)],["Seguimiento",metric("Resultado_contacto",truth)]]
+ ? [["Leads",state.rows.length],["Contacto",metric("Contactado",truth)],["Propuestas",metric("Propuesta",truth)],["Ventas",metric("Venta",truth)],["Cualificación",metric("Cualificado",truth)],["Seguimiento",metric("Nurturing",truth)]]
  : [["Ventas",state.rows.length],["Operativo",metric("Fecha_operativo",v=>truth(v))],["Facturación",metric("Fecha_factura",truth)],["Cobro",metric("Fecha_cobro",truth)],["Coste real",metric("Coste_real",truth)],["Incidencias",metric("Motivo_perdida",truth)]];
  document.getElementById("revenueMap").innerHTML=stages.map((x,i)=>`<div class="stage ${i===2||i===4?'hot':''}"><span class="n">${String(i+1).padStart(2,"0")}</span><b>${x[1]===null?'—':fmtNum(x[1])}</b><small>${x[0]}</small></div>`).join("");
 }
@@ -226,11 +226,11 @@ function analyze(){
  if(state.module==="M01"){
    if(has("Contactado")){
      const noContact=state.rows.filter(r=>!truth(val(r,"Contactado")));
-     if(noContact.length) state.leaks.push({id:"RL-001",type:"Revenue Leak",level:"POTENCIAL",title:"Leads sin primer contacto",stage:"Lead → Contacto",description:`${noContact.length} registros no muestran un primer contacto.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica todavía: falta demostrar impacto económico frente a un baseline comparable.",cause:"Proceso/SLA de contacto por validar",action:"Comparar conversión de contactados vs no contactados y validar SLA de primer contacto."});
+     if(noContact.length) state.leaks.push({id:"RL-001",type:"Hipótesis",level:"POTENCIAL",title:"Leads sin primer contacto",stage:"Lead → Contacto",description:`${noContact.length} registros no muestran un primer contacto.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica todavía: falta demostrar impacto económico frente a un baseline comparable.",cause:"Proceso/SLA de contacto por validar",action:"Comparar conversión de contactados vs no contactados y validar SLA de primer contacto."});
    }
    if(has("Propuesta")&&has("Venta")){
      const props=state.rows.filter(r=>truth(val(r,"Propuesta"))).length,sales=state.rows.filter(r=>truth(val(r,"Venta"))).length;
-     if(props) state.leaks.push({id:"RL-002",type:"Revenue Leak",level:"POTENCIAL",title:"Conversión de propuesta pendiente de investigar",stage:"Propuesta → Venta",description:`${sales.toLocaleString("es-ES")} ventas sobre ${props.toLocaleString("es-ES")} propuestas.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica hasta disponer de un grupo comparable y evidencia suficiente.",cause:"Por investigar",action:"Comparar propuesta→venta por fuente, comercial y segmento; después revisar seguimiento."});
+     if(props) state.leaks.push({id:"RL-002",type:"Hipótesis",level:"POTENCIAL",title:"Conversión de propuesta pendiente de investigar",stage:"Propuesta → Venta",description:`${sales.toLocaleString("es-ES")} ventas sobre ${props.toLocaleString("es-ES")} propuestas.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica hasta disponer de un grupo comparable y evidencia suficiente.",cause:"Por investigar",action:"Comparar propuesta→venta por fuente, comercial y segmento; después revisar seguimiento."});
    }
  }else{
    if(has("Fecha_operativo")&&has("Fecha_venta")){
@@ -238,12 +238,12 @@ function analyze(){
      const delays=state.rows.map(r=>{const a=parseDate(val(r,"Fecha_venta")),b=parseDate(val(r,"Fecha_operativo"));return a&&b?Math.round((b-a)/86400000):null}).filter(v=>v!=null);
      if(delays.length) {
        const med=[...delays].sort((a,b)=>a-b)[Math.floor(delays.length/2)];
-       if(med>60) state.leaks.push({id:"M02-R6-001",type:"Revenue Leak",level:"POTENCIAL",title:"Ciclo Venta → Operativo superior a 60 días",stage:"Venta → Operativo",description:`Mediana observada: ${med} días en ${delays.length} registros con fechas completas.`,evidence:"Registro de datos",impact:0,calc:"No se atribuye pérdida económica sin comparar cancelación, cumplimiento y causas.",cause:"Por investigar",action:"Cruzar duración con cancelaciones, promesa comercial y causa del retraso."});
+       if(med>60) state.leaks.push({id:"M02-R6-001",type:"Hipótesis",level:"POTENCIAL",title:"Ciclo Venta → Operativo superior a 60 días",stage:"Venta → Operativo",description:`Mediana observada: ${med} días en ${delays.length} registros con fechas completas.`,evidence:"Registro de datos",impact:0,calc:"No se atribuye pérdida económica sin comparar cancelación, cumplimiento y causas.",cause:"Por investigar",action:"Cruzar duración con cancelaciones, promesa comercial y causa del retraso."});
      }
    }
    if(has("Coste_planificado")&&has("Coste_real")){
      const over=state.rows.filter(r=>parseNum(val(r,"Coste_real"))>parseNum(val(r,"Coste_planificado"))).length;
-     if(over) state.leaks.push({id:"M02-R8-001",type:"Margin Leak",level:"POTENCIAL",title:"Coste real superior al previsto",stage:"Coste previsto → Coste real",description:`${over.toLocaleString("es-ES")} registros muestran coste real por encima del plan.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica como pérdida recuperable hasta conocer causa, alcance y evitabilidad.",cause:"Por investigar",action:"Segmentar sobrecoste por producto, equipo, horas, visitas y cambios de alcance."});
+     if(over) state.leaks.push({id:"M02-R8-001",type:"Hipótesis",level:"POTENCIAL",title:"Coste real superior al previsto",stage:"Coste previsto → Coste real",description:`${over.toLocaleString("es-ES")} registros muestran coste real por encima del plan.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica como pérdida recuperable hasta conocer causa, alcance y evitabilidad.",cause:"Por investigar",action:"Segmentar sobrecoste por producto, equipo, horas, visitas y cambios de alcance."});
    }
  }
  state.gaps.slice(0,12).forEach((g,i)=>state.leaks.push({id:"DG-"+String(i+1).padStart(3,"0"),type:"Data Gap",level:"POTENCIAL",title:"Falta "+g.name,stage:g.module,description:"No podemos demostrar esta hipótesis sin este dato.",evidence:"Dato no disponible",impact:0,cause:"Data Gap",action:"Incorporar el campo o fuente necesaria."}));
@@ -259,7 +259,7 @@ function analyze(){
 }
 function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
-const XRAY_BUILD="1312A6";
+const XRAY_BUILD="1312A7";
 function save(){localStorage.setItem("desvela-xray",JSON.stringify({...state,_build:XRAY_BUILD}))}
 function load(){
  try{
