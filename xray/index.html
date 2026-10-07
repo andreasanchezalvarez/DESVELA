@@ -109,27 +109,38 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 </main></div></div>
 <script>
 const state={company:"",module:"M01",rows:[],fields:[],mapping:{},leaks:[],gaps:[],actions:[],revenue:null};
-const contracts={M01:[
- ["Lead_ID","Identificador del registro","M01"],
- ["Fuente","Origen del lead","M01"],
- ["Contactado","Primer contacto","M01"],
- ["Tiempo_primer_contacto_min","Velocidad de contacto","M01"],
- ["Propuesta","Propuesta emitida","M01"],
- ["Venta","Venta","M01"],
- ["Etapa_actual","Etapa actual","M01"],
- ["Motivo_perdida","Motivo de pérdida","M01"],
- ["Fecha_venta","Fecha de venta","M02"],
- ["Fecha_operativo","Cliente operativo","M02"],
- ["Importe_venta","Valor económico","M02"],
- ["Coste_planificado","Coste previsto","M02"],
- ["Coste_real","Coste real","M02"],
- ["Fecha_factura","Facturación","M02"],
- ["Fecha_cobro","Cobro","M02"]
-];
+const contracts={
+ M01:[
+  ["Lead_ID","Identificador del registro","M01"],
+  ["Fuente","Origen del lead","M01"],
+  ["Contactado","Primer contacto","M01"],
+  ["Tiempo_primer_contacto_min","Velocidad de contacto","M01"],
+  ["Propuesta","Propuesta emitida","M01"],
+  ["Venta","Venta","M01"],
+  ["Etapa_actual","Etapa actual","M01"],
+  ["Motivo_perdida","Motivo de pérdida","M01"]
+ ],
+ M02:[
+  ["Fecha_venta","Fecha de venta","M02"],
+  ["Fecha_operativo","Cliente operativo","M02"],
+  ["Importe_venta","Valor económico","M02"],
+  ["Coste_planificado","Coste previsto","M02"],
+  ["Coste_real","Coste real","M02"],
+  ["Fecha_factura","Facturación","M02"],
+  ["Fecha_cobro","Cobro","M02"]
+ ]
+};
+function contract(){return contracts[state.module]||contracts.M01}
+function mapped(name){return state.mapping[name]||name}
 function go(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));window.scrollTo({top:0,behavior:"smooth"})}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.view));
 function money(v){if(v==null||isNaN(v))return"—";return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(v)}
-function renderMap(){const stages=[["Leads",state.rows.length],["Contacto",count("Contactado",v=>truth(v))],["Propuestas",count("Propuesta",v=>truth(v))],["Ventas",count("Venta",v=>truth(v))],["Operativo",count("Fecha_operativo",v=>v)],["Cobro",count("Fecha_cobro",v=>v)]];document.getElementById("revenueMap").innerHTML=stages.map((s,i)=>`<div class="stage ${i===2||i===4?'hot':''}"><span class="n">${String(i+1).padStart(2,"0")}</span><b>${fmtNum(s[1])}</b><small>${s[0]}</small></div>`).join("")}
+function renderMap(){
+ const stages=state.module==="M01"
+ ? [["Leads",state.rows.length],["Contacto",count("Contactado",v=>truth(v))],["Propuestas",count("Propuesta",v=>truth(v))],["Ventas",count("Venta",v=>truth(v))],["Cualificación",count("Etapa_actual",v=>String(v).toLowerCase().includes("cual"))],["Seguimiento",count("Motivo_perdida",v=>!v)]]
+ : [["Ventas",state.rows.length],["Operativo",count("Fecha_operativo",v=>v)],["Facturación",count("Fecha_factura",v=>v)],["Cobro",count("Fecha_cobro",v=>v)],["Coste real",count("Coste_real",v=>v)],["Incidencias",count("Motivo_perdida",v=>v)]];
+ document.getElementById("revenueMap").innerHTML=stages.map((x,i)=>`<div class="stage ${i===2||i===4?'hot':''}"><span class="n">${String(i+1).padStart(2,"0")}</span><b>${fmtNum(x[1])}</b><small>${x[0]}</small></div>`).join("");
+}
 function fmtNum(n){return new Intl.NumberFormat("es-ES",{maximumFractionDigits:0}).format(n||0)}
 function truth(v){return v!==undefined&&v!==null&&String(v).trim()!==""&&String(v).toLowerCase()!=="no"&&String(v).toLowerCase()!=="false"&&String(v)!=="0"}
 function count(f,fn){return state.rows.filter(r=>fn(r[f])).length}
