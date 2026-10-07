@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DESVELA X-RAY — Revenue Intelligence</title>
+<meta name="theme-color" content="#F7F3EC">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ivory:#f7f3ec;--paper:#fffdf9;--ink:#24231f;--muted:#777269;--line:#e5ded3;--sand:#d9c9b2;--rose:#ead4d2;--lav:#ddd9e8;--sage:#d9e1d7;--gold:#ad8e62;--red:#b65d50;--shadow:0 20px 60px rgba(67,53,35,.08);--r:18px;--font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--ivory);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}button,input,select{font:inherit}button{cursor:pointer}a{color:inherit}
+.app{min-height:100vh}.top{height:74px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px;background:rgba(247,243,236,.9);position:sticky;top:0;z-index:20;backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:13px}.mark{width:31px;height:31px;position:relative}.mark:before,.mark:after{content:"";position:absolute}.mark:before{left:4px;top:4px;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:23px solid var(--ink)}.mark:after{left:11px;top:12px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:10px solid var(--ivory)}
+.brand b{font-size:16px;letter-spacing:.12em}.brand span{font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.top-actions{display:flex;gap:10px;align-items:center}.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:11px;padding:9px 14px;font-weight:600;font-size:13px}.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}.btn:hover{transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 74px)}aside{border-right:1px solid var(--line);padding:30px 18px;background:rgba(255,253,249,.28)}.navlabel{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#9a9389;margin:0 10px 12px}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:10px;color:var(--muted);font-size:13px}.nav button.active{background:var(--paper);color:var(--ink);box-shadow:0 6px 20px rgba(67,53,35,.05)}.nav button span{display:block;font-size:10px;margin-top:3px;color:#aaa398}
+main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:auto}.view{display:none}.view.active{display:block}
+.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--gold);font-weight:700}.hero{display:flex;justify-content:space-between;gap:30px;align-items:end;margin-bottom:34px}.hero h1{font-size:clamp(32px,4vw,55px);line-height:1;letter-spacing:-.055em;margin:10px 0 13px}.hero p{color:var(--muted);max-width:640px;margin:0;font-size:15px}.status{border:1px solid var(--line);background:rgba(255,253,249,.7);padding:14px 16px;border-radius:14px;min-width:210px}.status small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.12em}.status strong{display:block;margin-top:5px;font-size:14px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}.metric{padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(67,53,35,.035)}.metric small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.13em}.metric strong{display:block;font-size:30px;letter-spacing:-.04em;margin-top:9px}.metric em{font-style:normal;color:var(--muted);font-size:11px}
+.section-title{display:flex;justify-content:space-between;align-items:end;margin:34px 0 14px}.section-title h2{font-size:18px;letter-spacing:-.02em;margin:0}.section-title span{font-size:11px;color:var(--muted)}
+.map{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.stage{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:17px;min-height:116px;position:relative}.stage:after{content:"";position:absolute;right:-7px;top:50%;width:12px;height:1px;background:var(--sand)}.stage:last-child:after{display:none}.stage .n{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.stage b{display:block;font-size:20px;margin-top:15px;letter-spacing:-.04em}.stage small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.stage.hot{background:#fbf3ef;border-color:#ecd1ca}.stage.hot b{color:var(--red)}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}.panel.pad{padding:24px}
+.leaks{display:grid;gap:8px}.leak{display:grid;grid-template-columns:72px 1fr 150px 120px 34px;gap:15px;align-items:center;padding:17px 18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,253,249,.7)}.leak:hover{border-color:#cfc3b4}.id{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}.leak h3{font-size:14px;margin:0 0 4px}.leak p{margin:0;color:var(--muted);font-size:11px}.impact{font-weight:700;font-size:14px;text-align:right}.impact small{display:block;color:var(--muted);font-weight:400;font-size:10px}.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.pill.prob{background:#f2e4d1;color:#7c623d}.pill.pot{background:#eeeae4;color:#777066}.pill.conf{background:#e4eadf;color:#50634f}.chev{border:0;background:transparent;color:var(--muted);font-size:18px}
+.empty{padding:70px 25px;text-align:center;color:var(--muted)}.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:8px}.empty p{font-size:13px;margin:0 auto 18px;max-width:480px}
+.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:11px;color:var(--muted);font-weight:600}.field input,.field select{width:100%;border:1px solid var(--line);background:#fffdf9;border-radius:10px;padding:11px 12px;outline:none;color:var(--ink)}.field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(173,142,98,.12)}
+.drop{border:1px dashed #cdbfae;background:#fbf7f0;border-radius:16px;padding:42px;text-align:center}.drop strong{display:block;font-size:17px}.drop p{color:var(--muted);font-size:12px;margin:7px 0 18px}.drop input{display:none}.drop .btn{display:inline-block}
+.mapping{display:grid;gap:8px}.maprow{display:grid;grid-template-columns:1fr 34px 1fr;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px}.maprow:last-child{border-bottom:0}.maprow select{border:1px solid var(--line);background:white;border-radius:8px;padding:7px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.search{flex:1;min-width:220px;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:10px 12px}.select{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:10px 12px;color:var(--ink)}
+.tablewrap{overflow:auto}.data-table{width:100%;border-collapse:collapse;font-size:11px}.data-table th,.data-table td{text-align:left;padding:12px;border-bottom:1px solid var(--line);white-space:nowrap}.data-table th{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}.data-table td{color:#4f4b44}.data-table tr:hover td{background:#fcfaf6}
+.detail{display:grid;grid-template-columns:1.25fr .75fr;gap:15px}.detail h2{font-size:24px;margin:8px 0}.detail .bigimpact{font-size:44px;letter-spacing:-.05em;font-weight:700;margin:15px 0}.kv{display:grid;grid-template-columns:130px 1fr;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:12px}.kv b{color:var(--muted);font-weight:600}.note{background:#f8f3ea;border-radius:12px;padding:14px;font-size:12px;color:#5d574e;line-height:1.55}
+.actionlist{display:grid;gap:9px}.action{display:grid;grid-template-columns:28px 1fr 100px 110px;gap:14px;align-items:center;padding:15px 16px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}.action .check{width:20px;height:20px;border:1px solid #c9c0b5;border-radius:6px;background:white}.action.done{opacity:.55}.action h3{font-size:13px;margin:0 0 4px}.action p{font-size:10px;color:var(--muted);margin:0}.action small{font-size:10px;color:var(--muted)}
+.notice{padding:13px 15px;border-radius:12px;background:#f2eee7;color:#655e54;font-size:11px;margin-bottom:15px}.notice strong{color:var(--ink)}
+@media(max-width:1050px){.layout{grid-template-columns:1fr}aside{display:none}.metrics{grid-template-columns:repeat(2,1fr)}.map{grid-template-columns:repeat(3,1fr)}.detail{grid-template-columns:1fr}.leak{grid-template-columns:60px 1fr 110px 90px 25px}}
+@media(max-width:650px){.top{padding:0 17px}.top-actions .btn:not(.primary){display:none}main{padding:27px 16px 50px}.hero{display:block}.status{margin-top:20px}.metrics{grid-template-columns:1fr 1fr}.metric{padding:16px}.metric strong{font-size:23px}.map{grid-template-columns:1fr 1fr}.stage:after{display:none}.leak{grid-template-columns:1fr 90px}.leak .id{display:none}.leak .pill{display:none}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.drop{padding:30px 15px}.action{grid-template-columns:28px 1fr}.action>div:nth-last-child(-n+2){display:none}.hero h1{font-size:38px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="mark"></div><div><b>DESVELA</b><span>X-RAY</span></div></div>
+  <div class="top-actions"><button class="btn" id="reset">Reiniciar</button><button class="btn primary" id="newXray">Nuevo X-RAY</button></div>
+</header>
+<div class="layout">
+<aside>
+  <div class="navlabel">Radiografía</div>
+  <nav class="nav">
+    <button class="active" data-view="overview">Resumen<span>Estado y prioridades</span></button>
+    <button data-view="import">Datos<span>Cargar y mapear</span></button>
+    <button data-view="evidence">Evidencia<span>Datos y desviaciones</span></button>
+    <button data-view="leaks">Leaks<span>Registro de hallazgos</span></button>
+    <button data-view="actions">Action<span>Ejecutar y medir</span></button>
+  </nav>
+</aside>
+<main>
+<section id="overview" class="view active">
+ <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.1</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
+ <div class="metrics">
+  <div class="metric"><small>Revenue analizado</small><strong id="mRevenue">—</strong><em>según datos disponibles</em></div>
+  <div class="metric"><small>Impacto potencial</small><strong id="mImpact">—</strong><em>no equivale a pérdida confirmada</em></div>
+  <div class="metric"><small>Hallazgos</small><strong id="mLeaks">0</strong><em>registrados en el X-RAY</em></div>
+  <div class="metric"><small>Data gaps</small><strong id="mGaps">0</strong><em>pendientes de demostrar</em></div>
+ </div>
+ <div class="section-title"><h2>El recorrido del dinero</h2><span>Vista de diagnóstico</span></div>
+ <div class="map" id="revenueMap"></div>
+ <div class="section-title"><h2>Qué requiere atención</h2><button class="btn" onclick="go('leaks')">Ver registro completo →</button></div>
+ <div class="leaks" id="topLeaks"></div>
+</section>
+
+<section id="import" class="view">
+ <div class="hero"><div><div class="eyebrow">Datos</div><h1>Cargar la realidad.</h1><p>Sube un CSV o Excel. DESVELA no asumirá que falta un dato: lo marcará como Data Gap.</p></div></div>
+ <div class="panel pad">
+  <div class="drop"><strong>Arrastra tu archivo aquí</strong><p>CSV, XLSX o XLS · los datos se procesan en tu navegador en esta V0.1.</p><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label></div>
+  <div id="fileInfo" style="margin-top:18px"></div>
+ </div>
+ <div id="mappingPanel" class="panel pad" style="margin-top:15px;display:none">
+   <div class="section-title" style="margin-top:0"><h2>Mapea los datos</h2><span id="rowCount"></span></div>
+   <div class="notice"><strong>Regla DESVELA:</strong> si un campo necesario no existe, no lo sustituimos con una estimación. Se registra como Data Gap.</div>
+   <div class="mapping" id="mapping"></div>
+   <div style="display:flex;justify-content:flex-end;margin-top:18px"><button class="btn primary" id="analyze">Validar y analizar →</button></div>
+ </div>
+</section>
+
+<section id="evidence" class="view">
+ <div class="hero"><div><div class="eyebrow">Evidence</div><h1>Antes de concluir.</h1><p>La desviación es solo el comienzo. Aquí se ve qué sabemos, qué falta y qué podemos demostrar.</p></div></div>
+ <div class="panel pad">
+   <div class="metrics" style="margin-bottom:0">
+    <div class="metric"><small>Registros</small><strong id="eRows">0</strong></div>
+    <div class="metric"><small>Campos disponibles</small><strong id="eFields">0</strong></div>
+    <div class="metric"><small>Datos incompletos</small><strong id="eIncomplete">0</strong></div>
+    <div class="metric"><small>Data gaps</small><strong id="eGap">0</strong></div>
+   </div>
+   <div class="section-title"><h2>Contrato de datos</h2><span>Entrada → Acción → Resultado → Tiempo → Responsable</span></div>
+   <div class="tablewrap"><table class="data-table"><thead><tr><th>Campo</th><th>Estado</th><th>Uso en análisis</th></tr></thead><tbody id="contract"></tbody></table></div>
+ </div>
+</section>
+
+<section id="leaks" class="view">
+ <div class="hero"><div><div class="eyebrow">Leak Register</div><h1>Lo que podemos demostrar.</h1><p>Un hallazgo solo entra como Leak cuando existe evidencia suficiente. Las hipótesis permanecen diferenciadas.</p></div></div>
+ <div class="toolbar"><input class="search" id="leakSearch" placeholder="Buscar hallazgo, etapa o evidencia…"><select class="select" id="typeFilter"><option value="">Todos</option><option>Revenue Leak</option><option>Margin Leak</option><option>Collection Leak</option><option>Data Gap</option></select></div>
+ <div class="leaks" id="allLeaks"></div>
+</section>
+
+<section id="actions" class="view">
+ <div class="hero"><div><div class="eyebrow">Action</div><h1>Del hallazgo al cambio.</h1><p>Una fuga no genera valor hasta que alguien cambia algo y podemos medir qué ocurrió después.</p></div></div>
+ <div class="panel pad"><div class="notice"><strong>Regla:</strong> cada acción debe tener responsable, KPI, objetivo y plazo. Si no, no es una acción ejecutable.</div><div class="actionlist" id="actionList"></div></div>
+</section>
+</main></div></div>
+<script>
+const state={company:"",rows:[],fields:[],mapping:{},leaks:[],gaps:[],actions:[],revenue:null};
+const required=[
+ ["Lead_ID","Identificador del registro","M01"],
+ ["Fuente","Origen del lead","M01"],
+ ["Contactado","Primer contacto","M01"],
+ ["Tiempo_primer_contacto_min","Velocidad de contacto","M01"],
+ ["Propuesta","Propuesta emitida","M01"],
+ ["Venta","Venta","M01"],
+ ["Etapa_actual","Etapa actual","M01"],
+ ["Motivo_perdida","Motivo de pérdida","M01"],
+ ["Fecha_venta","Fecha de venta","M02"],
+ ["Fecha_operativo","Cliente operativo","M02"],
+ ["Importe_venta","Valor económico","M02"],
+ ["Coste_planificado","Coste previsto","M02"],
+ ["Coste_real","Coste real","M02"],
+ ["Fecha_factura","Facturación","M02"],
+ ["Fecha_cobro","Cobro","M02"]
+];
+function go(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));window.scrollTo({top:0,behavior:"smooth"})}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.view));
+function money(v){if(v==null||isNaN(v))return"—";return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(v)}
+function renderMap(){const stages=[["Leads",state.rows.length],["Contacto",count("Contactado",v=>truth(v))],["Propuestas",count("Propuesta",v=>truth(v))],["Ventas",count("Venta",v=>truth(v))],["Operativo",count("Fecha_operativo",v=>v)],["Cobro",count("Fecha_cobro",v=>v)]];document.getElementById("revenueMap").innerHTML=stages.map((s,i)=>`<div class="stage ${i===2||i===4?'hot':''}"><span class="n">${String(i+1).padStart(2,"0")}</span><b>${fmtNum(s[1])}</b><small>${s[0]}</small></div>`).join("")}
+function fmtNum(n){return new Intl.NumberFormat("es-ES",{maximumFractionDigits:0}).format(n||0)}
+function truth(v){return v!==undefined&&v!==null&&String(v).trim()!==""&&String(v).toLowerCase()!=="no"&&String(v).toLowerCase()!=="false"&&String(v)!=="0"}
+function count(f,fn){return state.rows.filter(r=>fn(r[f])).length}
+function parseNum(v){if(typeof v==="number")return v;let s=String(v??"").replace(/\./g,"").replace(",",".").replace(/[^0-9.-]/g,"");return parseFloat(s)||0}
+function renderOverview(){document.getElementById("companyTitle").textContent=state.company?state.company:"Nueva radiografía.";document.getElementById("xrayStatus").textContent=state.rows.length?state.rows.length.toLocaleString("es-ES")+" registros cargados":"Sin datos cargados";document.getElementById("mRevenue").textContent=state.revenue?money(state.revenue):"—";document.getElementById("mImpact").textContent=state.leaks.filter(x=>x.type!=="Data Gap").length?money(state.leaks.reduce((a,x)=>a+(x.impact||0),0)):"—";document.getElementById("mLeaks").textContent=state.leaks.filter(x=>x.type!=="Data Gap").length;document.getElementById("mGaps").textContent=state.gaps.length;renderMap();renderLeakLists()}
+function renderLeakLists(){const target=document.getElementById("topLeaks"),all=document.getElementById("allLeaks");const arr=state.leaks.filter(x=>x.type!=="Data Gap");const html=arr.length?arr.map(leakHTML).join(""):`<div class="panel empty"><b>Aún no hay leaks demostrados.</b><p>Carga datos para que DESVELA pueda comparar realidad, detectar desviaciones y registrar evidencia.</p><button class="btn primary" onclick="go('import')">Cargar datos →</button></div>`;target.innerHTML=html;const filtered=state.leaks.filter(x=>{const q=(document.getElementById("leakSearch")?.value||"").toLowerCase(),t=document.getElementById("typeFilter")?.value||"";return(!q||(x.title+x.description+x.stage).toLowerCase().includes(q))&&(!t||x.type===t)});all.innerHTML=filtered.length?filtered.map(leakHTML).join(""):`<div class="panel empty"><b>No hay hallazgos para este filtro.</b></div>`}
+function leakHTML(x){return`<div class="leak" data-id="${x.id}"><div class="id">${x.id}</div><div><h3>${x.title}</h3><p>${x.stage} · ${x.evidence}</p></div><div class="impact">${money(x.impact)}<small>impacto potencial</small></div><div><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span></div><button class="chev" onclick="openLeak('${x.id}')">›</button></div>`}
+function openLeak(id){const x=state.leaks.find(a=>a.id===id);if(!x)return;const modal=document.createElement("div");modal.style="position:fixed;inset:0;background:rgba(36,35,31,.22);z-index:100;display:grid;place-items:center;padding:20px";modal.innerHTML=`<div class="panel pad" style="max-width:760px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between"><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span><button class="btn" id="close">Cerrar</button></div><h2 style="font-size:27px;margin:18px 0 7px">${x.title}</h2><p style="color:var(--muted);font-size:13px">${x.description}</p><div class="detail" style="margin-top:22px"><div><div class="eyebrow">Impacto potencial</div><div class="bigimpact">${money(x.impact)}</div><div class="note"><b>DATO → FÓRMULA → SUPUESTOS → RESULTADO</b><br>${x.calc||"Pendiente de cálculo con datos del cliente."}</div></div><div><div class="kv"><b>Tipo</b><span>${x.type}</span></div><div class="kv"><b>Evidencia</b><span>${x.evidence}</span></div><div class="kv"><b>Causa</b><span>${x.cause||"Hipótesis causal por validar"}</span></div><div class="kv"><b>Acción</b><span>${x.action||"Pendiente"}</span></div></div></div></div>`;document.body.appendChild(modal);modal.querySelector("#close").onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
+function renderActions(){document.getElementById("actionList").innerHTML=state.actions.length?state.actions.map((a,i)=>`<div class="action ${a.done?'done':''}"><button class="check" onclick="toggleAction(${i})">${a.done?'✓':''}</button><div><h3>${a.title}</h3><p>${a.kpi} · objetivo: ${a.target}</p></div><small>${a.owner}</small><small>${a.deadline}</small></div>`).join(""):`<div class="empty"><b>La Action Queue aparecerá aquí.</b><p>Primero necesitamos un hallazgo con evidencia suficiente para convertirlo en una acción concreta.</p></div>`}
+function toggleAction(i){state.actions[i].done=!state.actions[i].done;save();renderActions()}
+function analyze(){state.gaps=[];const available=Object.keys(state.rows[0]||{});required.forEach(([name,use,module])=>{if(!available.some(f=>f.toLowerCase()===name.toLowerCase()))state.gaps.push({name,use,module})});state.leaks=[];const has=(n)=>available.some(f=>f.toLowerCase()===n.toLowerCase());if(has("Contactado")&&has("Venta")){const noContact=state.rows.filter(r=>!truth(r.Contactado));const sold=state.rows.filter(r=>truth(r.Venta)).length;const avg=state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0)/(state.rows.length||1);const impact=noContact.length*(sold/(state.rows.length||1))*avg*.5;if(noContact.length)state.leaks.push({id:"RL-001",type:"Revenue Leak",level:"PROBABLE",title:"Leads sin primer contacto",stage:"Lead → Contacto",description:`${noContact.length} registros no muestran un primer contacto.`,evidence:"Registro de datos",impact,calc:`${noContact.length} leads × conversión observada × ticket medio × 50% recuperabilidad asumida para ilustración. Validar supuestos antes de usar económicamente.`,cause:"Proceso/SLA de contacto por validar",action:"Definir SLA de primer contacto y revisar los registros sin actividad."})}if(has("Propuesta")&&has("Venta")){const props=count("Propuesta",truth),sales=count("Venta",truth);if(props){const conv=sales/props;state.leaks.push({id:"RL-002",type:"Revenue Leak",level:"POTENCIAL",title:"Conversión de propuesta pendiente de investigar",stage:"Propuesta → Venta",description:`La herramienta puede comparar conversión por fuente, equipo y segmento cuando esos datos existan.`,evidence:"Análisis pendiente",impact:0,calc:"No se cuantifica hasta disponer de grupo comparable y evidencia suficiente.",cause:"Por investigar",action:"Comparar propuestas ganadas/perdidas y actividad de seguimiento."})}}if(state.gaps.length){state.leaks.push(...state.gaps.slice(0,8).map((g,i)=>({id:"DG-"+String(i+1).padStart(3,"0"),type:"Data Gap",level:"POTENCIAL",title:"Falta "+g.name,stage:g.module,description:"No podemos demostrar esta hipótesis sin este dato.",evidence:"Dato no disponible",impact:0,cause:"Data Gap",action:"Incorporar el campo o fuente necesaria."})))}state.revenue=has("Importe_venta")?state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0):null;state.actions=state.leaks.filter(x=>x.type==="Revenue Leak"&&x.impact>0).map(x=>({title:x.action,owner:"Por asignar",kpi:"KPI vinculado al leak",target:"Definir con baseline",deadline:"Por definir",done:false}));save();renderAll();go("overview")}
+function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=required.map(x=>{const ok=state.fields.some(f=>f.toLowerCase()===x[0].toLowerCase());return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
+function renderAll(){renderOverview();renderActions();renderEvidence()}
+function save(){localStorage.setItem("desvela-xray",JSON.stringify(state))}
+function load(){try{const x=JSON.parse(localStorage.getItem("desvela-xray"));if(x)Object.assign(state,x)}catch(e){}}
+function readFile(file){const reader=new FileReader();reader.onload=e=>{try{let wb;if(file.name.toLowerCase().endsWith(".csv")){const text=e.target.result;wb=XLSX.read(text,{type:"string"})}else{wb=XLSX.read(e.target.result,{type:"array"})}const ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:""});state.rows=rows;state.fields=rows.length?Object.keys(rows[0]):[];state.company=file.name.replace(/\.(csv|xlsx|xls)$/i,"");document.getElementById("fileInfo").innerHTML=`<div class="notice"><strong>${file.name}</strong> · ${fmtNum(rows.length)} registros · ${fmtNum(state.fields.length)} campos · hoja: ${wb.SheetNames[0]}</div>`;document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent=fmtNum(rows.length)+" registros";document.getElementById("mapping").innerHTML=required.map(([name,use])=>{const match=state.fields.find(f=>f.toLowerCase()===name.toLowerCase());return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("")}catch(err){alert("No hemos podido leer el archivo: "+err.message)}};if(file.name.toLowerCase().endsWith(".csv"))reader.readAsText(file);else reader.readAsArrayBuffer(file)}
+document.getElementById("fileInput").onchange=e=>{if(e.target.files[0])readFile(e.target.files[0])};
+document.getElementById("analyze").onclick=()=>{document.querySelectorAll("#mapping select").forEach(s=>{if(s.value)state.mapping[s.dataset.field]=s.value});analyze()};
+document.getElementById("leakSearch").oninput=renderLeakLists;document.getElementById("typeFilter").onchange=renderLeakLists;
+document.getElementById("newXray").onclick=()=>{document.getElementById("fileInput").value="";state.company="";state.rows=[];state.fields=[];state.mapping={};state.leaks=[];state.gaps=[];state.actions=[];state.revenue=null;save();renderAll();go("import")};
+document.getElementById("reset").onclick=()=>{if(confirm("¿Reiniciar el X-RAY actual?")){localStorage.removeItem("desvela-xray");location.reload()}};
+load();renderAll();
+</script>
+</body>
+</html>
