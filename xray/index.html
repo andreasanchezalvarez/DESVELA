@@ -137,11 +137,19 @@ const contracts={
 };
 function contract(){return contracts[state.module]||contracts.M01}
 function mapped(name){return state.mapping[name]||name}
+function resolveField(name){
+ const norm=s=>String(s??"").trim().toLowerCase().replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+ const mappedName=state.mapping[name];
+ if(mappedName&&state.fields.includes(mappedName)) return mappedName;
+ if(state.fields.includes(name)) return name;
+ const target=norm(name);
+ return state.fields.find(f=>norm(f)===target)||null;
+}
 function go(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));window.scrollTo({top:0,behavior:"smooth"})}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.view));
 function money(v){if(v==null||isNaN(v))return"—";return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(v)}
 function renderMap(){
- const getField=name=>state.mapping[name]||state.fields.find(f=>f.toLowerCase()===name.toLowerCase());
+ const getField=name=>resolveField(name);
  const metric=(name,fn)=>{const f=getField(name);return f?state.rows.filter(r=>fn(r[f])).length:null};
  const stages=state.module==="M01"
  ? [["Leads",state.rows.length],["Contacto",metric("Contactado",truth)],["Propuestas",metric("Propuesta",truth)],["Ventas",metric("Venta",truth)],["Cualificación",metric("Cualificado",truth)],["Seguimiento",metric("Resultado_contacto",truth)]]
@@ -161,8 +169,7 @@ function toggleAction(i){state.actions[i].done=!state.actions[i].done;save();ren
 function analyze(){
  state.module=document.getElementById("moduleSelect").value||state.module;
  const available=Object.keys(state.rows[0]||{});
- const norm=s=>String(s).trim().toLowerCase();
- const findField=name=>available.find(f=>norm(f)===norm(mapped(name)));
+ const findField=name=>resolveField(name);
  const req=contract();
  state.gaps=[];
  req.forEach(([name,use,module])=>{if(!findField(name))state.gaps.push({name,use,module})});
