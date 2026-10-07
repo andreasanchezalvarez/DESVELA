@@ -69,7 +69,9 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 <section id="import" class="view">
  <div class="hero"><div><div class="eyebrow">Datos</div><h1>Cargar la realidad.</h1><p>Sube un CSV o Excel. DESVELA no asumirá que falta un dato: lo marcará como Data Gap.</p></div></div>
  <div class="panel pad">
-  <div class="drop"><strong>Arrastra tu archivo aquí</strong><p>CSV, XLSX o XLS · los datos se procesan en tu navegador en esta V0.1.</p><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label></div>
+  <div class="drop"><strong>Arrastra tu archivo aquí</strong><p>CSV, XLSX o XLS · los datos se procesan en tu navegador. Nada se sube a DESVELA en esta V0.2.</p>
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label><button class="btn" id="demoM01">Probar con demo M01</button></div></div>
+<div style="margin-top:14px;display:flex;gap:10px;align-items:center"><label style="font-size:11px;color:var(--muted);font-weight:700">MÓDULO</label><select class="select" id="moduleSelect"><option value="M01">M01 · Lead → Venta</option><option value="M02">M02 · Venta → Entrega → Cobro</option></select><span style="font-size:11px;color:var(--muted)">El contrato de datos cambia según el módulo.</span></div>
   <div id="fileInfo" style="margin-top:18px"></div>
  </div>
  <div id="mappingPanel" class="panel pad" style="margin-top:15px;display:none">
@@ -106,8 +108,8 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 </section>
 </main></div></div>
 <script>
-const state={company:"",rows:[],fields:[],mapping:{},leaks:[],gaps:[],actions:[],revenue:null};
-const required=[
+const state={company:"",module:"M01",rows:[],fields:[],mapping:{},leaks:[],gaps:[],actions:[],revenue:null};
+const contracts={M01:[
  ["Lead_ID","Identificador del registro","M01"],
  ["Fuente","Origen del lead","M01"],
  ["Contactado","Primer contacto","M01"],
@@ -138,18 +140,63 @@ function leakHTML(x){return`<div class="leak" data-id="${x.id}"><div class="id">
 function openLeak(id){const x=state.leaks.find(a=>a.id===id);if(!x)return;const modal=document.createElement("div");modal.style="position:fixed;inset:0;background:rgba(36,35,31,.22);z-index:100;display:grid;place-items:center;padding:20px";modal.innerHTML=`<div class="panel pad" style="max-width:760px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between"><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span><button class="btn" id="close">Cerrar</button></div><h2 style="font-size:27px;margin:18px 0 7px">${x.title}</h2><p style="color:var(--muted);font-size:13px">${x.description}</p><div class="detail" style="margin-top:22px"><div><div class="eyebrow">Impacto potencial</div><div class="bigimpact">${money(x.impact)}</div><div class="note"><b>DATO → FÓRMULA → SUPUESTOS → RESULTADO</b><br>${x.calc||"Pendiente de cálculo con datos del cliente."}</div></div><div><div class="kv"><b>Tipo</b><span>${x.type}</span></div><div class="kv"><b>Evidencia</b><span>${x.evidence}</span></div><div class="kv"><b>Causa</b><span>${x.cause||"Hipótesis causal por validar"}</span></div><div class="kv"><b>Acción</b><span>${x.action||"Pendiente"}</span></div></div></div></div>`;document.body.appendChild(modal);modal.querySelector("#close").onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
 function renderActions(){document.getElementById("actionList").innerHTML=state.actions.length?state.actions.map((a,i)=>`<div class="action ${a.done?'done':''}"><button class="check" onclick="toggleAction(${i})">${a.done?'✓':''}</button><div><h3>${a.title}</h3><p>${a.kpi} · objetivo: ${a.target}</p></div><small>${a.owner}</small><small>${a.deadline}</small></div>`).join(""):`<div class="empty"><b>La Action Queue aparecerá aquí.</b><p>Primero necesitamos un hallazgo con evidencia suficiente para convertirlo en una acción concreta.</p></div>`}
 function toggleAction(i){state.actions[i].done=!state.actions[i].done;save();renderActions()}
-function analyze(){state.gaps=[];const available=Object.keys(state.rows[0]||{});required.forEach(([name,use,module])=>{if(!available.some(f=>f.toLowerCase()===name.toLowerCase()))state.gaps.push({name,use,module})});state.leaks=[];const has=(n)=>available.some(f=>f.toLowerCase()===n.toLowerCase());if(has("Contactado")&&has("Venta")){const noContact=state.rows.filter(r=>!truth(r.Contactado));const sold=state.rows.filter(r=>truth(r.Venta)).length;const avg=state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0)/(state.rows.length||1);const impact=noContact.length*(sold/(state.rows.length||1))*avg*.5;if(noContact.length)state.leaks.push({id:"RL-001",type:"Revenue Leak",level:"PROBABLE",title:"Leads sin primer contacto",stage:"Lead → Contacto",description:`${noContact.length} registros no muestran un primer contacto.`,evidence:"Registro de datos",impact,calc:`${noContact.length} leads × conversión observada × ticket medio × 50% recuperabilidad asumida para ilustración. Validar supuestos antes de usar económicamente.`,cause:"Proceso/SLA de contacto por validar",action:"Definir SLA de primer contacto y revisar los registros sin actividad."})}if(has("Propuesta")&&has("Venta")){const props=count("Propuesta",truth),sales=count("Venta",truth);if(props){const conv=sales/props;state.leaks.push({id:"RL-002",type:"Revenue Leak",level:"POTENCIAL",title:"Conversión de propuesta pendiente de investigar",stage:"Propuesta → Venta",description:`La herramienta puede comparar conversión por fuente, equipo y segmento cuando esos datos existan.`,evidence:"Análisis pendiente",impact:0,calc:"No se cuantifica hasta disponer de grupo comparable y evidencia suficiente.",cause:"Por investigar",action:"Comparar propuestas ganadas/perdidas y actividad de seguimiento."})}}if(state.gaps.length){state.leaks.push(...state.gaps.slice(0,8).map((g,i)=>({id:"DG-"+String(i+1).padStart(3,"0"),type:"Data Gap",level:"POTENCIAL",title:"Falta "+g.name,stage:g.module,description:"No podemos demostrar esta hipótesis sin este dato.",evidence:"Dato no disponible",impact:0,cause:"Data Gap",action:"Incorporar el campo o fuente necesaria."})))}state.revenue=has("Importe_venta")?state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0):null;state.actions=state.leaks.filter(x=>x.type==="Revenue Leak"&&x.impact>0).map(x=>({title:x.action,owner:"Por asignar",kpi:"KPI vinculado al leak",target:"Definir con baseline",deadline:"Por definir",done:false}));save();renderAll();go("overview")}
-function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=required.map(x=>{const ok=state.fields.some(f=>f.toLowerCase()===x[0].toLowerCase());return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
+function analyze(){
+ state.module=document.getElementById("moduleSelect").value||state.module;
+ const available=Object.keys(state.rows[0]||{});
+ const norm=s=>String(s).trim().toLowerCase();
+ const findField=name=>available.find(f=>norm(f)===norm(mapped(name)));
+ const req=contract();
+ state.gaps=[];
+ req.forEach(([name,use,module])=>{if(!findField(name))state.gaps.push({name,use,module})});
+ state.leaks=[];
+ const field=name=>findField(name);
+ const val=(r,name)=>field(name)?r[field(name)]:"";
+ const has=name=>!!field(name);
+ if(state.module==="M01"){
+   if(has("Contactado")){
+     const noContact=state.rows.filter(r=>!truth(val(r,"Contactado")));
+     if(noContact.length) state.leaks.push({id:"RL-001",type:"Revenue Leak",level:"POTENCIAL",title:"Leads sin primer contacto",stage:"Lead → Contacto",description:`${noContact.length} registros no muestran un primer contacto.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica todavía: falta demostrar impacto económico frente a un baseline comparable.",cause:"Proceso/SLA de contacto por validar",action:"Comparar conversión de contactados vs no contactados y validar SLA de primer contacto."});
+   }
+   if(has("Propuesta")&&has("Venta")){
+     const props=state.rows.filter(r=>truth(val(r,"Propuesta"))).length,sales=state.rows.filter(r=>truth(val(r,"Venta"))).length;
+     if(props) state.leaks.push({id:"RL-002",type:"Revenue Leak",level:"POTENCIAL",title:"Conversión de propuesta pendiente de investigar",stage:"Propuesta → Venta",description:`${sales.toLocaleString("es-ES")} ventas sobre ${props.toLocaleString("es-ES")} propuestas.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica hasta disponer de un grupo comparable y evidencia suficiente.",cause:"Por investigar",action:"Comparar propuesta→venta por fuente, comercial y segmento; después revisar seguimiento."});
+   }
+ }else{
+   if(has("Fecha_operativo")&&has("Fecha_venta")){
+     const parseDate=v=>{const d=new Date(v);return isNaN(d)?null:d};
+     const delays=state.rows.map(r=>{const a=parseDate(val(r,"Fecha_venta")),b=parseDate(val(r,"Fecha_operativo"));return a&&b?Math.round((b-a)/86400000):null}).filter(v=>v!=null);
+     if(delays.length) {
+       const med=[...delays].sort((a,b)=>a-b)[Math.floor(delays.length/2)];
+       if(med>60) state.leaks.push({id:"M02-R6-001",type:"Revenue Leak",level:"POTENCIAL",title:"Ciclo Venta → Operativo superior a 60 días",stage:"Venta → Operativo",description:`Mediana observada: ${med} días en ${delays.length} registros con fechas completas.`,evidence:"Registro de datos",impact:0,calc:"No se atribuye pérdida económica sin comparar cancelación, cumplimiento y causas.",cause:"Por investigar",action:"Cruzar duración con cancelaciones, promesa comercial y causa del retraso."});
+     }
+   }
+   if(has("Coste_planificado")&&has("Coste_real")){
+     const over=state.rows.filter(r=>parseNum(val(r,"Coste_real"))>parseNum(val(r,"Coste_planificado"))).length;
+     if(over) state.leaks.push({id:"M02-R8-001",type:"Margin Leak",level:"POTENCIAL",title:"Coste real superior al previsto",stage:"Coste previsto → Coste real",description:`${over.toLocaleString("es-ES")} registros muestran coste real por encima del plan.`,evidence:"Registro de datos",impact:0,calc:"No se cuantifica como pérdida recuperable hasta conocer causa, alcance y evitabilidad.",cause:"Por investigar",action:"Segmentar sobrecoste por producto, equipo, horas, visitas y cambios de alcance."});
+   }
+ }
+ state.gaps.slice(0,12).forEach((g,i)=>state.leaks.push({id:"DG-"+String(i+1).padStart(3,"0"),type:"Data Gap",level:"POTENCIAL",title:"Falta "+g.name,stage:g.module,description:"No podemos demostrar esta hipótesis sin este dato.",evidence:"Dato no disponible",impact:0,cause:"Data Gap",action:"Incorporar el campo o fuente necesaria."}));
+ state.revenue=has("Importe_venta")?state.rows.reduce((s,r)=>s+parseNum(val(r,"Importe_venta")),0):null;
+ state.actions=state.leaks.filter(x=>x.type!=="Data Gap"&&x.action).map(x=>({title:x.action,owner:"Por asignar",kpi:"KPI vinculado al hallazgo",target:"Definir con baseline",deadline:"Por definir",done:false}));
+ save();renderAll();go("overview");
+}
+function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=state.fields.some(f=>f.toLowerCase()===x[0].toLowerCase());return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
 function save(){localStorage.setItem("desvela-xray",JSON.stringify(state))}
 function load(){try{const x=JSON.parse(localStorage.getItem("desvela-xray"));if(x)Object.assign(state,x)}catch(e){}}
-function readFile(file){const reader=new FileReader();reader.onload=e=>{try{let wb;if(file.name.toLowerCase().endsWith(".csv")){const text=e.target.result;wb=XLSX.read(text,{type:"string"})}else{wb=XLSX.read(e.target.result,{type:"array"})}const ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:""});state.rows=rows;state.fields=rows.length?Object.keys(rows[0]):[];state.company=file.name.replace(/\.(csv|xlsx|xls)$/i,"");document.getElementById("fileInfo").innerHTML=`<div class="notice"><strong>${file.name}</strong> · ${fmtNum(rows.length)} registros · ${fmtNum(state.fields.length)} campos · hoja: ${wb.SheetNames[0]}</div>`;document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent=fmtNum(rows.length)+" registros";document.getElementById("mapping").innerHTML=required.map(([name,use])=>{const match=state.fields.find(f=>f.toLowerCase()===name.toLowerCase());return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("")}catch(err){alert("No hemos podido leer el archivo: "+err.message)}};if(file.name.toLowerCase().endsWith(".csv"))reader.readAsText(file);else reader.readAsArrayBuffer(file)}
+function readFile(file){const reader=new FileReader();reader.onload=e=>{try{let wb;if(file.name.toLowerCase().endsWith(".csv")){const text=e.target.result;wb=XLSX.read(text,{type:"string"})}else{wb=XLSX.read(e.target.result,{type:"array"})}const ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:""});state.rows=rows;state.fields=rows.length?Object.keys(rows[0]):[];state.company=file.name.replace(/\.(csv|xlsx|xls)$/i,"");document.getElementById("fileInfo").innerHTML=`<div class="notice"><strong>${file.name}</strong> · ${fmtNum(rows.length)} registros · ${fmtNum(state.fields.length)} campos · hoja: ${wb.SheetNames[0]}</div>`;document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent=fmtNum(rows.length)+" registros";document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{const match=state.fields.find(f=>f.toLowerCase()===name.toLowerCase());return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("")}catch(err){alert("No hemos podido leer el archivo: "+err.message)}};if(file.name.toLowerCase().endsWith(".csv"))reader.readAsText(file);else reader.readAsArrayBuffer(file)}
 document.getElementById("fileInput").onchange=e=>{if(e.target.files[0])readFile(e.target.files[0])};
 document.getElementById("analyze").onclick=()=>{document.querySelectorAll("#mapping select").forEach(s=>{if(s.value)state.mapping[s.dataset.field]=s.value});analyze()};
 document.getElementById("leakSearch").oninput=renderLeakLists;document.getElementById("typeFilter").onchange=renderLeakLists;
-document.getElementById("newXray").onclick=()=>{document.getElementById("fileInput").value="";state.company="";state.rows=[];state.fields=[];state.mapping={};state.leaks=[];state.gaps=[];state.actions=[];state.revenue=null;save();renderAll();go("import")};
+document.getElementById("newXray").onclick=()=>{document.getElementById("fileInput").value="";state.company="";state.module="M01";state.rows=[];state.fields=[];state.mapping={};state.leaks=[];state.gaps=[];state.actions=[];state.revenue=null;save();renderAll();go("import")};
 document.getElementById("reset").onclick=()=>{if(confirm("¿Reiniciar el X-RAY actual?")){localStorage.removeItem("desvela-xray");location.reload()}};
-load();renderAll();
+document.getElementById("moduleSelect").onchange=()=>{state.module=document.getElementById("moduleSelect").value;state.gaps=[];state.leaks=[];state.mapping={};renderAll()};
+document.getElementById("demoM01").onclick=()=>{
+ state.module="M01";document.getElementById("moduleSelect").value="M01";
+ const rows=[];for(let i=1;i<=120;i++)rows.push({Lead_ID:"DEMO-"+i,Fuente:["Meta","Google","Orgánico"][i%3],Contactado:i%10!==0,Tiempo_primer_contacto_min:i%7===0?"":25+(i%90),Propuesta:i%4!==0,Venta:i%19===0,Etapa_actual:i%4===0?"Cualificación":"Seguimiento",Motivo_perdida:i%19===0?"":(i%3===0?"No responde":"Precio")});
+ state.rows=rows;state.fields=Object.keys(rows[0]);state.mapping={};state.company="DEMO M01 · 120 registros";document.getElementById("fileInfo").innerHTML='<div class="notice"><strong>Demo sintética M01</strong> · No es un resultado de cliente y no debe utilizarse comercialmente.</div>';document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent="120 registros";document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{const match=state.fields.find(f=>f.toLowerCase()===name.toLowerCase());return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("");go("import");
+};
+load();document.getElementById("moduleSelect").value=state.module||"M01";renderAll();
 </script>
 </body>
 </html>
