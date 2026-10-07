@@ -136,14 +136,33 @@ const contracts={
  ]
 };
 function contract(){return contracts[state.module]||contracts.M01}
+function normField(s){return String(s??"").trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
 function mapped(name){return state.mapping[name]||name}
+function suggestField(name){
+ const exact=state.fields.find(f=>normField(f)===normField(name));
+ if(exact)return exact;
+ const aliases={
+  Lead_ID:["lead_id","lead","id_lead"],
+  Fuente:["fuente","source","origen","canal"],
+  Contactado:["contactado","contacted","fecha_primer_contacto","first_contact_date"],
+  Tiempo_primer_contacto_min:["tiempo_primer_contacto_min","primer_contacto_min","first_contact_min"],
+  Intentos_contacto:["intentos_contacto","intentos","contact_attempts"],
+  Resultado_contacto:["resultado_contacto","contact_result"],
+  Cualificado:["cualificado","calificado","qualified"],
+  Criterio_cualificacion:["criterio_cualificacion","criterio_calificacion","qualification_criteria"],
+  Nurturing:["nurturing","estado_nurturing"],
+  Propuesta:["propuesta","proposal","propuesta_emitida"],
+  Venta:["venta","sale","fecha_venta","fecha_cierre","closed_date"],
+  Etapa_actual:["etapa_actual","etapa","stage"],
+  Motivo_perdida:["motivo_perdida","motivo_perdida","loss_reason","razon_perdida"]
+ };
+ const targets=(aliases[name]||[]).map(normField);
+ return state.fields.find(f=>targets.includes(normField(f)))||null;
+}
 function resolveField(name){
- const norm=s=>String(s??"").trim().toLowerCase().replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
  const mappedName=state.mapping[name];
  if(mappedName&&state.fields.includes(mappedName)) return mappedName;
- if(state.fields.includes(name)) return name;
- const target=norm(name);
- return state.fields.find(f=>norm(f)===target)||null;
+ return suggestField(name);
 }
 function go(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));window.scrollTo({top:0,behavior:"smooth"})}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -238,11 +257,11 @@ function analyze(){
  if(info&&diagnostics) info.innerHTML+=`<div class="notice" style="margin-top:8px"><strong>Lectura validada:</strong> ${diagnostics}</div>`;
  save();renderAll();go("overview");
 }
-function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=state.fields.some(f=>f.toLowerCase()===x[0].toLowerCase());return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
+function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
 function save(){localStorage.setItem("desvela-xray",JSON.stringify(state))}
 function load(){try{const x=JSON.parse(localStorage.getItem("desvela-xray"));if(x)Object.assign(state,x)}catch(e){}}
-function readFile(file){const reader=new FileReader();reader.onload=e=>{try{let wb;if(file.name.toLowerCase().endsWith(".csv")){const text=e.target.result;wb=XLSX.read(text,{type:"string"})}else{wb=XLSX.read(e.target.result,{type:"array"})}const ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:""});state.rows=rows;state.fields=rows.length?Object.keys(rows[0]):[];state.mapping={};contract().forEach(([name])=>{const match=state.fields.find(f=>f.toLowerCase()===name.toLowerCase());if(match)state.mapping[name]=match});state.leaks=[];state.gaps=[];state.actions=[];state.revenue=null;state.company=file.name.replace(/\.(csv|xlsx|xls)$/i,"");document.getElementById("fileInfo").innerHTML=`<div class="notice"><strong>${file.name}</strong> · ${fmtNum(rows.length)} registros · ${fmtNum(state.fields.length)} campos · hoja: ${wb.SheetNames[0]}</div>`;document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent=fmtNum(rows.length)+" registros";document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{const match=state.fields.find(f=>f.toLowerCase()===name.toLowerCase());return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("")}catch(err){alert("No hemos podido leer el archivo: "+err.message)}};if(file.name.toLowerCase().endsWith(".csv"))reader.readAsText(file);else reader.readAsArrayBuffer(file)}
+function readFile(file){const reader=new FileReader();reader.onload=e=>{try{let wb;if(file.name.toLowerCase().endsWith(".csv")){const text=e.target.result;wb=XLSX.read(text,{type:"string"})}else{wb=XLSX.read(e.target.result,{type:"array"})}const ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:""});state.rows=rows;state.fields=rows.length?Object.keys(rows[0]):[];state.mapping={};contract().forEach(([name])=>{const match=suggestField(name);if(match)state.mapping[name]=match});state.leaks=[];state.gaps=[];state.actions=[];state.revenue=null;state.company=file.name.replace(/\.(csv|xlsx|xls)$/i,"");document.getElementById("fileInfo").innerHTML=`<div class="notice"><strong>${file.name}</strong> · ${fmtNum(rows.length)} registros · ${fmtNum(state.fields.length)} campos · hoja: ${wb.SheetNames[0]}</div>`;document.getElementById("mappingPanel").style.display="block";document.getElementById("rowCount").textContent=fmtNum(rows.length)+" registros";document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{const match=state.mapping[name]||suggestField(name);return`<div class="maprow"><span><b>${name}</b><br><small style="color:var(--muted)">${use}</small></span><span>→</span><select data-field="${name}"><option value="">Data Gap</option>${state.fields.map(f=>`<option ${f===match?'selected':''}>${f}</option>`).join("")}</select></div>`}).join("")}catch(err){alert("No hemos podido leer el archivo: "+err.message)}};if(file.name.toLowerCase().endsWith(".csv"))reader.readAsText(file);else reader.readAsArrayBuffer(file)}
 document.getElementById("fileInput").onchange=e=>{if(e.target.files[0])readFile(e.target.files[0])};
 document.getElementById("analyze").onclick=()=>{document.querySelectorAll("#mapping select").forEach(s=>{if(s.value)state.mapping[s.dataset.field]=s.value});analyze()};
 document.getElementById("leakSearch").oninput=renderLeakLists;document.getElementById("typeFilter").onchange=renderLeakLists;
