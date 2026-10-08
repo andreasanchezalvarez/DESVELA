@@ -53,10 +53,10 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 </aside>
 <main>
 <section id="overview" class="view active">
- <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312M02C</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
+ <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312M02D</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
  <div class="metrics">
   <div class="metric"><small>Revenue analizado</small><strong id="mRevenue">—</strong><em>según datos disponibles</em></div>
-  <div class="metric"><small>Impacto / exposición</small><strong id="mImpact">—</strong><em>según tipo de hallazgo; no equivale a pérdida confirmada</em></div>
+  <div class="metric"><small>Exposición económica</small><strong id="mImpact">—</strong><em id="impactBreakdown">separada por Revenue, Margin y Collection</em></div>
   <div class="metric"><small>Atención</small><strong id="mLeaks">0</strong><em>leaks e hipótesis priorizados</em></div>
   <div class="metric"><small>Data Gaps</small><strong id="mGaps">0</strong><em>pendientes de demostrar</em></div>
  </div>
@@ -252,6 +252,10 @@ function renderOverview(){
  const economic=state.leaks.filter(x=>x.type!=="Data Gap"&&x.impact>0);
  const total=economic.reduce((a,x)=>a+(x.impact||0),0);
  document.getElementById("mImpact").textContent=economic.length?money(total):"—";
+ const byType={};
+ economic.forEach(x=>{byType[x.type]=(byType[x.type]||0)+(x.impact||0)});
+ const breakdown=Object.entries(byType).map(([k,v])=>k.replace(" Leak","")+": "+money(v)).join(" · ");
+ document.getElementById("impactBreakdown").textContent=breakdown||"Sin impacto económico cuantificado";
  document.getElementById("mLeaks").textContent=economic.length;
  document.getElementById("mGaps").textContent=state.gaps.length;
  const gapEl=document.getElementById("topGaps");
@@ -312,7 +316,7 @@ function analyze(){
 }
 function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
-const XRAY_BUILD="1312M02C";
+const XRAY_BUILD="1312M02D";
 function save(){localStorage.setItem("desvela-xray",JSON.stringify({...state,_build:XRAY_BUILD}))}
 function load(){
  try{
