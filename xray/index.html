@@ -53,17 +53,19 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 </aside>
 <main>
 <section id="overview" class="view active">
- <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312M02</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
+ <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312M02C</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
  <div class="metrics">
   <div class="metric"><small>Revenue analizado</small><strong id="mRevenue">—</strong><em>según datos disponibles</em></div>
-  <div class="metric"><small>Impacto potencial</small><strong id="mImpact">—</strong><em>no equivale a pérdida confirmada</em></div>
+  <div class="metric"><small>Impacto / exposición</small><strong id="mImpact">—</strong><em>según tipo de hallazgo; no equivale a pérdida confirmada</em></div>
   <div class="metric"><small>Atención</small><strong id="mLeaks">0</strong><em>leaks e hipótesis priorizados</em></div>
-  <div class="metric"><small>Data gaps</small><strong id="mGaps">0</strong><em>pendientes de demostrar</em></div>
+  <div class="metric"><small>Data Gaps</small><strong id="mGaps">0</strong><em>pendientes de demostrar</em></div>
  </div>
  <div class="section-title"><h2>El recorrido del dinero</h2><span>Vista de diagnóstico</span></div>
  <div class="map" id="revenueMap"></div>
  <div class="section-title"><h2>Qué requiere atención</h2><button class="btn" onclick="go('leaks')">Ver registro completo →</button></div>
  <div class="leaks" id="topLeaks"></div>
+ <div class="section-title" style="margin-top:28px"><h2>Brechas de datos</h2><span id="gapSummary">0 pendientes de demostrar</span></div>
+ <div class="panel pad" id="topGaps"></div>
 </section>
 
 <section id="import" class="view">
@@ -112,8 +114,7 @@ const state={company:"",module:"M01",rows:[],fields:[],mapping:{},leaks:[],gaps:
 const contracts={
  M01:[
   ["Lead_ID","Identificador del registro","M01"],
-  ["Fuente","Origen del lead","M01"],
-  ["Contactado","Primer contacto","M01"],
+  ["Fuente","Origen del lead","M01"],  ["Contactado","Primer contacto","M01"],
   ["Tiempo_primer_contacto_min","Velocidad de contacto","M01"],
   ["Intentos_contacto","Intentos de contacto","M01"],
   ["Resultado_contacto","Resultado estructurado del contacto","M01"],
@@ -244,7 +245,23 @@ function metricFor(name){
 }
 function count(f,fn){return state.rows.filter(r=>fn(r[f])).length}
 function parseNum(v){if(typeof v==="number")return v;let s=String(v??"").replace(/\./g,"").replace(",",".").replace(/[^0-9.-]/g,"");return parseFloat(s)||0}
-function renderOverview(){document.getElementById("companyTitle").textContent=state.company?state.company:"Nueva radiografía.";document.getElementById("xrayStatus").textContent=state.rows.length?state.rows.length.toLocaleString("es-ES")+" registros cargados":"Sin datos cargados";document.getElementById("mRevenue").textContent=state.revenue?money(state.revenue):"—";document.getElementById("mImpact").textContent=state.leaks.some(x=>x.type!=="Data Gap"&&x.impact>0)?money(state.leaks.filter(x=>x.type!=="Data Gap").reduce((a,x)=>a+(x.impact||0),0)):"—";document.getElementById("mLeaks").textContent=state.leaks.filter(x=>x.type!=="Data Gap").length;document.getElementById("mGaps").textContent=state.gaps.length;renderMap();renderLeakLists()}
+function renderOverview(){
+ document.getElementById("companyTitle").textContent=state.company?state.company:"Nueva radiografía.";
+ document.getElementById("xrayStatus").textContent=state.rows.length?state.rows.length.toLocaleString("es-ES")+" registros cargados":"Sin datos cargados";
+ document.getElementById("mRevenue").textContent=state.revenue?money(state.revenue):"—";
+ const economic=state.leaks.filter(x=>x.type!=="Data Gap"&&x.impact>0);
+ const total=economic.reduce((a,x)=>a+(x.impact||0),0);
+ document.getElementById("mImpact").textContent=economic.length?money(total):"—";
+ document.getElementById("mLeaks").textContent=economic.length;
+ document.getElementById("mGaps").textContent=state.gaps.length;
+ const gapEl=document.getElementById("topGaps");
+ const gapSummary=document.getElementById("gapSummary");
+ if(gapEl){
+   gapSummary.textContent=state.gaps.length+" pendientes de demostrar";
+   gapEl.innerHTML=state.gaps.length?state.gaps.map(g=>`<div style="display:flex;justify-content:space-between;gap:20px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><div><b>Falta ${g.name}</b><div style="font-size:12px;color:var(--muted)">${g.use||"Dato requerido para el análisis."}</div></div><span class="pill pot">DATA GAP</span></div>`).join(""):`<div class="empty"><b>No hay Data Gaps.</b><p>Los campos necesarios para este análisis están disponibles.</p></div>`;
+ }
+ renderMap();renderLeakLists()
+}
 function renderLeakLists(){const target=document.getElementById("topLeaks"),all=document.getElementById("allLeaks");const arr=state.leaks.filter(x=>x.type!=="Data Gap");const html=arr.length?arr.map(leakHTML).join(""):`<div class="panel empty"><b>Aún no hay hallazgos.</b><p>Carga datos para que DESVELA pueda comparar realidad, detectar desviaciones y registrar evidencia.</p><button class="btn primary" onclick="go('import')">Cargar datos →</button></div>`;target.innerHTML=html;const filtered=state.leaks.filter(x=>{const q=(document.getElementById("leakSearch")?.value||"").toLowerCase(),t=document.getElementById("typeFilter")?.value||"";return(!q||(x.title+x.description+x.stage).toLowerCase().includes(q))&&(!t||x.type===t)});all.innerHTML=filtered.length?filtered.map(leakHTML).join(""):`<div class="panel empty"><b>No hay hallazgos para este filtro.</b></div>`}
 function leakHTML(x){return`<div class="leak" data-id="${x.id}"><div class="id">${x.id}</div><div><h3>${x.title}</h3><p>${x.type} · ${x.stage} · ${x.evidence}</p></div><div class="impact">${money(x.impact)}<small>${x.type==='Revenue Leak'?'impacto identificado':'impacto potencial'}</small></div><div><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span></div><button class="chev" onclick="openLeak('${x.id}')">›</button></div>`}
 function openLeak(id){const x=state.leaks.find(a=>a.id===id);if(!x)return;const modal=document.createElement("div");modal.style="position:fixed;inset:0;background:rgba(36,35,31,.22);z-index:100;display:grid;place-items:center;padding:20px";modal.innerHTML=`<div class="panel pad" style="max-width:760px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between"><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span><button class="btn" id="close">Cerrar</button></div><h2 style="font-size:27px;margin:18px 0 7px">${x.title}</h2><p style="color:var(--muted);font-size:13px">${x.description}</p><div class="detail" style="margin-top:22px"><div><div class="eyebrow">${x.type==="Revenue Leak"?"Impacto identificado":"Impacto potencial"}</div><div class="bigimpact">${money(x.impact)}</div><div class="note"><b>DATO → FÓRMULA → SUPUESTOS → RESULTADO</b><br>${x.calc||"Pendiente de cálculo con datos del cliente."}</div><div class="note" style="margin-top:10px"><b>Resultado real</b><br>€ recuperados: — · pendiente de ejecución y medición.</div></div><div><div class="kv"><b>Tipo</b><span>${x.type}</span></div><div class="kv"><b>Evidencia</b><span>${x.evidence}</span></div><div class="kv"><b>Nivel</b><span>${x.level}</span></div><div class="kv"><b>Causa</b><span>${x.cause||"Hipótesis causal por validar"}</span></div><div class="kv"><b>Acción</b><span>${x.action||"Pendiente"}</span></div></div></div></div>`;document.body.appendChild(modal);modal.querySelector("#close").onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
@@ -257,8 +274,7 @@ function analyze(){
  const req=contract();
  state.gaps=[];
  req.forEach(([name,use,module])=>{if(!findField(name))state.gaps.push({name,use,module})});
- state.leaks=[];
- const field=name=>findField(name);
+ state.leaks=[]; const field=name=>findField(name);
  const val=(r,name)=>field(name)?r[field(name)]:"";
  const has=name=>!!field(name);
  if(state.module==="M01"){
@@ -296,7 +312,7 @@ function analyze(){
 }
 function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
-const XRAY_BUILD="1312M02";
+const XRAY_BUILD="1312M02C";
 function save(){localStorage.setItem("desvela-xray",JSON.stringify({...state,_build:XRAY_BUILD}))}
 function load(){
  try{
