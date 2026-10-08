@@ -53,7 +53,7 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
 </aside>
 <main>
 <section id="overview" class="view active">
- <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312A6</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
+ <div class="hero"><div><div class="eyebrow">Revenue X-Ray · V0.3 · BUILD 1312M02</div><h1 id="companyTitle">Nueva radiografía.</h1><p id="companySub">Haz visible dónde se desvía el dinero. Primero datos; después evidencia.</p></div><div class="status"><small>Estado del X-RAY</small><strong id="xrayStatus">Sin datos cargados</strong></div></div>
  <div class="metrics">
   <div class="metric"><small>Revenue analizado</small><strong id="mRevenue">—</strong><em>según datos disponibles</em></div>
   <div class="metric"><small>Impacto potencial</small><strong id="mImpact">—</strong><em>no equivale a pérdida confirmada</em></div>
@@ -70,7 +70,7 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
  <div class="hero"><div><div class="eyebrow">Datos</div><h1>Cargar la realidad.</h1><p>Sube un CSV o Excel. DESVELA no asumirá que falta un dato: lo marcará como Data Gap.</p></div></div>
  <div class="panel pad">
   <div class="drop"><strong>Arrastra tu archivo aquí</strong><p>CSV, XLSX o XLS · los datos se procesan en tu navegador. Nada se sube a DESVELA en esta V0.2.</p>
-<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label><button class="btn" id="demoM01">Probar con demo M01</button><button class="btn" id="qaLeak">Probar caso QA · Impacto</button><button class="btn" id="qaConfirmed">Probar caso QA · Leak confirmado</button></div></div>
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label><button class="btn" id="demoM01">Probar con demo M01</button><button class="btn" id="qaLeak">Probar caso QA · Impacto</button><button class="btn" id="qaConfirmed">Probar caso QA · Leak confirmado</button><button class="btn" id="qaM02">Probar suite QA · M02</button></div></div>
 <div style="margin-top:14px;display:flex;gap:10px;align-items:center"><label style="font-size:11px;color:var(--muted);font-weight:700">MÓDULO</label><select class="select" id="moduleSelect"><option value="M01">M01 · Lead → Venta</option><option value="M02">M02 · Venta → Entrega → Cobro</option></select><span style="font-size:11px;color:var(--muted)">El contrato de datos cambia según el módulo.</span></div>
   <div id="fileInfo" style="margin-top:18px"></div>
  </div>
@@ -117,8 +117,7 @@ const contracts={
   ["Tiempo_primer_contacto_min","Velocidad de contacto","M01"],
   ["Intentos_contacto","Intentos de contacto","M01"],
   ["Resultado_contacto","Resultado estructurado del contacto","M01"],
-  ["Cualificado","Resultado de cualificación","M01"],
-  ["Criterio_cualificacion","Criterio de cualificación","M01"],
+  ["Cualificado","Resultado de cualificación","M01"],  ["Criterio_cualificacion","Criterio de cualificación","M01"],
   ["Nurturing","Estado de nurturing","M01"],
   ["Propuesta","Propuesta emitida","M01"],
   ["Venta","Venta","M01"],
@@ -126,13 +125,29 @@ const contracts={
   ["Motivo_perdida","Motivo de pérdida","M01"]
  ],
  M02:[
+  ["ID_proyecto","Identificador del proyecto","M02"],
   ["Fecha_venta","Fecha de venta","M02"],
+  ["Fecha_orden_lista","Orden lista para planificar","M02"],
+  ["Fecha_asignacion","Fecha asignada","M02"],
+  ["Fecha_prevista_inicial","Primera fecha prometida","M02"],
+  ["Fecha_inicio_real","Inicio real","M02"],
+  ["Fecha_fin_real","Fin real","M02"],
+  ["Fecha_puesta_en_marcha","Puesta en marcha","M02"],
   ["Fecha_operativo","Cliente operativo","M02"],
+  ["Plazo_prometido","Plazo comprometido","M02"],
   ["Importe_venta","Valor económico","M02"],
   ["Coste_planificado","Coste previsto","M02"],
   ["Coste_real","Coste real","M02"],
+  ["Trabajo_adicional_no_facturado","Trabajo adicional no facturado","M02"],
   ["Fecha_factura","Facturación","M02"],
-  ["Fecha_cobro","Cobro","M02"]
+  ["Fecha_vencimiento","Vencimiento de factura","M02"],
+  ["Fecha_cobro","Cobro","M02"],
+  ["Importe_factura","Importe facturado","M02"],
+  ["Importe_pendiente","Importe pendiente de cobro","M02"],
+  ["Dias_vencido","Días vencido","M02"],
+  ["Estado_cobro","Estado de cobro","M02"],
+  ["Motivo_sobrecoste","Motivo del sobrecoste","M02"],
+  ["Fecha_reprogramacion","Historial/reprogramación","M02"]
  ]
 };
 function contract(){return contracts[state.module]||contracts.M01}
@@ -154,7 +169,30 @@ function suggestField(name){
   Propuesta:["propuesta","proposal","propuesta_emitida"],
   Venta:["venta","sale","fecha_venta","fecha_cierre","closed_date"],
   Etapa_actual:["etapa_actual","etapa","stage"],
-  Motivo_perdida:["motivo_perdida","motivo_perdida","loss_reason","razon_perdida"]
+  Motivo_perdida:["motivo_perdida","motivo_perdida","loss_reason","razon_perdida"],
+  ID_proyecto:["id_proyecto","proyecto_id","project_id"],
+  Fecha_venta:["fecha_venta","venta_fecha","sale_date"],
+  Fecha_orden_lista:["fecha_orden_lista","orden_lista","order_ready_date"],
+  Fecha_asignacion:["fecha_asignacion","fecha_asignada","assignment_date"],
+  Fecha_prevista_inicial:["fecha_prevista_inicial","primera_fecha_prometida","initial_promised_date"],
+  Fecha_inicio_real:["fecha_inicio_real","inicio_real","actual_start_date"],
+  Fecha_fin_real:["fecha_fin_real","fin_real","actual_end_date"],
+  Fecha_puesta_en_marcha:["fecha_puesta_en_marcha","puesta_en_marcha","commissioning_date"],
+  Fecha_operativo:["fecha_operativo","operativo","operational_date"],
+  Plazo_prometido:["plazo_prometido","fecha_prometida","promised_date"],
+  Importe_venta:["importe_venta","ticket","valor_venta","sale_amount"],
+  Coste_planificado:["coste_planificado","coste_previsto","planned_cost"],
+  Coste_real:["coste_real","actual_cost"],
+  Trabajo_adicional_no_facturado:["trabajo_adicional_no_facturado","adicional_no_facturado","unbilled_extra_work"],
+  Fecha_factura:["fecha_factura","factura_fecha","invoice_date"],
+  Fecha_vencimiento:["fecha_vencimiento","vencimiento","due_date"],
+  Fecha_cobro:["fecha_cobro","cobro_fecha","payment_date"],
+  Importe_factura:["importe_factura","importe_facturado","invoice_amount"],
+  Importe_pendiente:["importe_pendiente","pendiente_cobro","outstanding_amount"],
+  Dias_vencido:["dias_vencido","dias_de_mora","days_overdue"],
+  Estado_cobro:["estado_cobro","estado_pago","payment_status"],
+  Motivo_sobrecoste:["motivo_sobrecoste","causa_sobrecoste","overcost_reason"],
+  Fecha_reprogramacion:["fecha_reprogramacion","reprogramacion","reschedule_date"]
  };
  const targets=(aliases[name]||[]).map(normField);
  return state.fields.find(f=>targets.includes(normField(f)))||null;
@@ -237,8 +275,7 @@ function analyze(){
      const parseDate=v=>{const d=new Date(v);return isNaN(d)?null:d};
      const delays=state.rows.map(r=>{const a=parseDate(val(r,"Fecha_venta")),b=parseDate(val(r,"Fecha_operativo"));return a&&b?Math.round((b-a)/86400000):null}).filter(v=>v!=null);
      if(delays.length) {
-       const med=[...delays].sort((a,b)=>a-b)[Math.floor(delays.length/2)];
-       if(med>60) state.leaks.push({id:"M02-R6-001",type:"Hipótesis",level:"POTENCIAL",title:"Ciclo Venta → Operativo superior a 60 días",stage:"Venta → Operativo",description:`Mediana observada: ${med} días en ${delays.length} registros con fechas completas.`,evidence:"Registro de datos",impact:0,calc:"No se atribuye pérdida económica sin comparar cancelación, cumplimiento y causas.",cause:"Por investigar",action:"Cruzar duración con cancelaciones, promesa comercial y causa del retraso."});
+       const med=[...delays].sort((a,b)=>a-b)[Math.floor(delays.length/2)];       if(med>60) state.leaks.push({id:"M02-R6-001",type:"Hipótesis",level:"POTENCIAL",title:"Ciclo Venta → Operativo superior a 60 días",stage:"Venta → Operativo",description:`Mediana observada: ${med} días en ${delays.length} registros con fechas completas.`,evidence:"Registro de datos",impact:0,calc:"No se atribuye pérdida económica sin comparar cancelación, cumplimiento y causas.",cause:"Por investigar",action:"Cruzar duración con cancelaciones, promesa comercial y causa del retraso."});
      }
    }
    if(has("Coste_planificado")&&has("Coste_real")){
@@ -259,7 +296,7 @@ function analyze(){
 }
 function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
-const XRAY_BUILD="1312AA";
+const XRAY_BUILD="1312M02";
 function save(){localStorage.setItem("desvela-xray",JSON.stringify({...state,_build:XRAY_BUILD}))}
 function load(){
  try{
@@ -376,6 +413,97 @@ document.getElementById("qaConfirmed").onclick=()=>{
  state.revenue=state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0);
  state.gaps=contract().filter(([name])=>!resolveField(name)).map(([name,use,module])=>({name,use,module}));
  state.actions=state.leaks.map(x=>({title:x.action,owner:"Responsable comercial",kpi:"Lead → Venta por SLA",target:"Recuperar la desviación frente al baseline dentro de SLA",deadline:"Por definir",done:false}));
+ save();renderAll();go("overview");
+};
+document.getElementById("qaM02").onclick=()=>{
+ state.module="M02";document.getElementById("moduleSelect").value="M02";
+ const rows=[];
+ // Controlled M02 QA suite: four independent evidence patterns in one synthetic dataset.
+ // Revenue Leak: matched cohorts, delayed planning -> excess cancellations.
+ // Margin Leak: recorded avoidable overcost.
+ // Collection Leak: overdue invoices with outstanding amount.
+ // Data Gap: reprogramming history intentionally absent from the dataset.
+ for(let i=1;i<=600;i++){
+   const revenueCase=i<=200, marginCase=i>200&&i<=400, collectionCase=i>400;
+   let daysToReady, cancelled, plannedCost=10000, actualCost=10000, extraUnbilled=0;
+   let overdue=0, pending=0, invoice=0, collectionStatus="Cobrado";
+   if(revenueCase){
+     const reference=i<=100;
+     daysToReady=reference?10:45;
+     cancelled=reference?(i<=5):(i<=115);
+   }else if(marginCase){
+     daysToReady=15;
+     cancelled=false;
+     actualCost=i<=220?12000:10000;
+     extraUnbilled=i<=220?0:0;
+   }else{
+     daysToReady=20;
+     cancelled=false;
+     invoice=20000;
+     overdue=i<=440?45:0;
+     pending=overdue?20000:0;
+     collectionStatus=overdue?"Vencido":"Cobrado";
+   }
+   rows.push({
+     ID_proyecto:"QA-M02-"+i,
+     Fecha_venta:"2026-01-"+String((i%28)+1).padStart(2,"0"),
+     Fecha_orden_lista:"2026-01-"+String((i%28)+11).padStart(2,"0"),
+     Fecha_asignacion:"2026-02-"+String((i%28)+1).padStart(2,"0"),
+     Fecha_prevista_inicial:"2026-02-"+String((i%28)+10).padStart(2,"0"),
+     Fecha_inicio_real:"2026-02-"+String((i%28)+11).padStart(2,"0"),
+     Fecha_fin_real:"2026-02-"+String((i%28)+15).padStart(2,"0"),
+     Fecha_puesta_en_marcha:"2026-02-"+String((i%28)+16).padStart(2,"0"),
+     Fecha_operativo:"2026-02-"+String((i%28)+17).padStart(2,"0"),
+     Plazo_prometido:30,
+     Importe_venta:20000,
+     Coste_planificado:plannedCost,
+     Coste_real:actualCost,
+     Trabajo_adicional_no_facturado:extraUnbilled,
+     Fecha_factura:"2026-03-"+String((i%28)+1).padStart(2,"0"),
+     Fecha_vencimiento:"2026-03-15",
+     Fecha_cobro:collectionStatus==="Cobrado"?"2026-03-20":"",
+     Importe_factura:invoice,
+     Importe_pendiente:pending,
+     Dias_vencido:overdue,
+     Estado_cobro:collectionStatus,
+     Motivo_sobrecoste:actualCost>plannedCost?"Sobrecoste operativo evitable":"",
+     // Fecha_reprogramacion is intentionally absent: this is the controlled Data Gap.
+     Cancelado:cancelled,
+     Dias_venta_orden:daysToReady,
+     Caso_QA:revenueCase?"Revenue":marginCase?"Margin":"Collection"
+   });
+ }
+ state.rows=rows;state.fields=Object.keys(rows[0]);state.mapping={};
+ state.company="QA · Suite M02 · Revenue + Margin + Collection + Data Gap";
+ document.getElementById("fileInfo").innerHTML='<div class="notice"><strong>Suite QA M02 controlada</strong> · Sintética · Valida cuatro categorías sin mezclarlas. No es resultado de cliente.</div>';
+ document.getElementById("mappingPanel").style.display="block";
+ document.getElementById("rowCount").textContent="600 registros";
+ document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{
+   const match=suggestField(name);
+   return '<div class="maprow"><span><b>'+name+'</b><br><small style="color:var(--muted)">'+use+'</small></span><span>→</span><select data-field="'+name+'"><option value="">Data Gap</option>'+state.fields.map(f=>'<option '+(f===match?'selected':'')+'>'+f+'</option>').join("")+'</select></div>';
+ }).join("");
+ state.leaks=[];state.gaps=[];state.actions=[];
+ const reference=state.rows.filter(r=>r.Caso_QA==="Revenue"&&r.Dias_venta_orden<=30);
+ const delayed=state.rows.filter(r=>r.Caso_QA==="Revenue"&&r.Dias_venta_orden>30);
+ const refCancel=reference.filter(r=>truth(r.Cancelado)).length;
+ const delayedCancel=delayed.filter(r=>truth(r.Cancelado)).length;
+ const baseline=reference.length?refCancel/reference.length:0;
+ const expected=delayed.length*baseline;
+ const excess=Math.max(0,delayedCancel-expected);
+ const revenueImpact=excess*20000;
+ const marginRows=state.rows.filter(r=>r.Caso_QA==="Margin"&&parseNum(r.Coste_real)>parseNum(r.Coste_planificado));
+ const marginImpact=marginRows.reduce((sum,r)=>sum+(parseNum(r.Coste_real)-parseNum(r.Coste_planificado)),0);
+ const collectionRows=state.rows.filter(r=>r.Caso_QA==="Collection"&&parseNum(r.Dias_vencido)>0&&parseNum(r.Importe_pendiente)>0);
+ const collectionImpact=collectionRows.reduce((sum,r)=>sum+parseNum(r.Importe_pendiente),0);
+ state.leaks=[
+  {id:"QA-M02-RL-001",type:"Revenue Leak",level:"CONFIRMADO POR ANÁLISIS",title:"Cancelación superior en ventas con preparación >30 días",stage:"Venta → Planificación",description:delayedCancel+" cancelaciones en "+delayed.length+" proyectos retrasados frente a "+refCancel+" en "+reference.length+" proyectos comparables.",evidence:"Análisis comparativo de cohortes emparejadas",impact:revenueImpact,calc:"Baseline de cancelación en referencia: "+(baseline*100).toFixed(1)+"% ("+refCancel+"/"+reference.length+"). Cancelaciones esperadas en cohorte retrasada: "+expected.toFixed(1)+". Observadas: "+delayedCancel+". Desviación: "+excess.toFixed(1)+" cancelaciones × 20.000€ = "+money(revenueImpact)+". Supuesto QA: cohortes comparables y el retraso es la diferencia material.",cause:"Tiempo Venta → Orden lista superior a 30 días.",action:"Reducir Venta → Orden lista a ≤30 días y medir cancelación por cohorte, separando bloqueos atribuibles a cliente/tercero.",qa:true},
+  {id:"QA-M02-ML-001",type:"Margin Leak",level:"CONFIRMADO POR REGISTRO",title:"Sobrecoste operativo evitable frente al coste previsto",stage:"Ejecución → Coste real",description:marginRows.length+" proyectos presentan coste real superior al previsto con causa tipificada.",evidence:"Registro de coste previsto vs coste real y motivo de sobrecoste",impact:marginImpact,calc:"Σ (coste real − coste previsto) en proyectos con sobrecoste evitable = "+money(marginImpact)+". No se suma como Revenue Leak.",cause:"Sobrecoste operativo evitable.",action:"Analizar las causas de los proyectos afectados y eliminar el sobrecoste evitable; KPI: desviación de coste por proyecto.",qa:true},
+  {id:"QA-M02-CL-001",type:"Collection Leak",level:"CONFIRMADO POR REGISTRO",title:"Facturas vencidas con importe pendiente de cobro",stage:"Facturación → Cobro",description:collectionRows.length+" facturas están vencidas y mantienen importe pendiente.",evidence:"Registro de vencimiento, estado de cobro e importe pendiente",impact:collectionImpact,calc:"Σ importe pendiente de facturas con días vencidos >0 = "+money(collectionImpact)+". Es importe pendiente/atrasado, no pérdida definitiva.",cause:"Cobro vencido sin cierre.",action:"Priorizar las facturas vencidas por importe y antigüedad; responsable de cobro y fecha de próximo contacto para cada saldo.",qa:true},
+  {id:"QA-M02-DG-001",type:"Data Gap",level:"POTENCIAL",title:"Falta historial de reprogramaciones",stage:"Planificación",description:"No existe el campo Fecha_reprogramacion en el dataset QA.",evidence:"Contrato M02: campo requerido no disponible",impact:0,calc:"No se cuantifica. Sin historial de cambios de fecha no podemos demostrar el impacto de las reprogramaciones.",cause:"Data Gap",action:"Incorporar histórico de cada cambio de fecha, motivo y responsable.",qa:true}
+ ];
+ state.gaps=contract().filter(([name])=>!resolveField(name)).map(([name,use,module])=>({name,use,module}));
+ state.revenue=state.rows.reduce((sum,r)=>sum+parseNum(r.Importe_venta),0);
+ state.actions=state.leaks.filter(x=>x.type!=="Data Gap").map(x=>({title:x.action,owner:x.type==="Collection Leak"?"Responsable de cobro":x.type==="Margin Leak"?"Operaciones":"Responsable de planificación",kpi:x.type==="Revenue Leak"?"Cancelación por cohorte":x.type==="Margin Leak"?"Desviación de coste por proyecto":"Importe vencido pendiente",target:x.type==="Revenue Leak"?"≤5% en cohorte >30 días":x.type==="Margin Leak"?"Reducir desviación evitable":"Reducir saldo vencido",deadline:"Por definir",done:false}));
  save();renderAll();go("overview");
 };
 document.getElementById("demoM01").onclick=()=>{
