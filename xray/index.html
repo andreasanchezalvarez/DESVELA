@@ -57,7 +57,7 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
  <div class="metrics">
   <div class="metric"><small>Revenue analizado</small><strong id="mRevenue">—</strong><em>según datos disponibles</em></div>
   <div class="metric"><small>Impacto potencial</small><strong id="mImpact">—</strong><em>no equivale a pérdida confirmada</em></div>
-  <div class="metric"><small>Hallazgos</small><strong id="mLeaks">0</strong><em>registrados en el X-RAY</em></div>
+  <div class="metric"><small>Atención</small><strong id="mLeaks">0</strong><em>leaks e hipótesis priorizados</em></div>
   <div class="metric"><small>Data gaps</small><strong id="mGaps">0</strong><em>pendientes de demostrar</em></div>
  </div>
  <div class="section-title"><h2>El recorrido del dinero</h2><span>Vista de diagnóstico</span></div>
@@ -70,7 +70,7 @@ main{max-width:1500px;width:100%;padding:38px clamp(22px,4vw,58px) 70px;margin:a
  <div class="hero"><div><div class="eyebrow">Datos</div><h1>Cargar la realidad.</h1><p>Sube un CSV o Excel. DESVELA no asumirá que falta un dato: lo marcará como Data Gap.</p></div></div>
  <div class="panel pad">
   <div class="drop"><strong>Arrastra tu archivo aquí</strong><p>CSV, XLSX o XLS · los datos se procesan en tu navegador. Nada se sube a DESVELA en esta V0.2.</p>
-<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label><button class="btn" id="demoM01">Probar con demo M01</button><button class="btn" id="qaLeak">Probar caso QA · Impacto</button></div></div>
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><label class="btn primary">Seleccionar archivo<input id="fileInput" type="file" accept=".csv,.xlsx,.xls"></label><button class="btn" id="demoM01">Probar con demo M01</button><button class="btn" id="qaLeak">Probar caso QA · Impacto</button><button class="btn" id="qaConfirmed">Probar caso QA · Leak confirmado</button></div></div>
 <div style="margin-top:14px;display:flex;gap:10px;align-items:center"><label style="font-size:11px;color:var(--muted);font-weight:700">MÓDULO</label><select class="select" id="moduleSelect"><option value="M01">M01 · Lead → Venta</option><option value="M02">M02 · Venta → Entrega → Cobro</option></select><span style="font-size:11px;color:var(--muted)">El contrato de datos cambia según el módulo.</span></div>
   <div id="fileInfo" style="margin-top:18px"></div>
  </div>
@@ -208,8 +208,8 @@ function count(f,fn){return state.rows.filter(r=>fn(r[f])).length}
 function parseNum(v){if(typeof v==="number")return v;let s=String(v??"").replace(/\./g,"").replace(",",".").replace(/[^0-9.-]/g,"");return parseFloat(s)||0}
 function renderOverview(){document.getElementById("companyTitle").textContent=state.company?state.company:"Nueva radiografía.";document.getElementById("xrayStatus").textContent=state.rows.length?state.rows.length.toLocaleString("es-ES")+" registros cargados":"Sin datos cargados";document.getElementById("mRevenue").textContent=state.revenue?money(state.revenue):"—";document.getElementById("mImpact").textContent=state.leaks.some(x=>x.type!=="Data Gap"&&x.impact>0)?money(state.leaks.filter(x=>x.type!=="Data Gap").reduce((a,x)=>a+(x.impact||0),0)):"—";document.getElementById("mLeaks").textContent=state.leaks.filter(x=>x.type!=="Data Gap").length;document.getElementById("mGaps").textContent=state.gaps.length;renderMap();renderLeakLists()}
 function renderLeakLists(){const target=document.getElementById("topLeaks"),all=document.getElementById("allLeaks");const arr=state.leaks.filter(x=>x.type!=="Data Gap");const html=arr.length?arr.map(leakHTML).join(""):`<div class="panel empty"><b>Aún no hay hallazgos.</b><p>Carga datos para que DESVELA pueda comparar realidad, detectar desviaciones y registrar evidencia.</p><button class="btn primary" onclick="go('import')">Cargar datos →</button></div>`;target.innerHTML=html;const filtered=state.leaks.filter(x=>{const q=(document.getElementById("leakSearch")?.value||"").toLowerCase(),t=document.getElementById("typeFilter")?.value||"";return(!q||(x.title+x.description+x.stage).toLowerCase().includes(q))&&(!t||x.type===t)});all.innerHTML=filtered.length?filtered.map(leakHTML).join(""):`<div class="panel empty"><b>No hay hallazgos para este filtro.</b></div>`}
-function leakHTML(x){return`<div class="leak" data-id="${x.id}"><div class="id">${x.id}</div><div><h3>${x.title}</h3><p>${x.stage} · ${x.evidence}</p></div><div class="impact">${money(x.impact)}<small>impacto potencial</small></div><div><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span></div><button class="chev" onclick="openLeak('${x.id}')">›</button></div>`}
-function openLeak(id){const x=state.leaks.find(a=>a.id===id);if(!x)return;const modal=document.createElement("div");modal.style="position:fixed;inset:0;background:rgba(36,35,31,.22);z-index:100;display:grid;place-items:center;padding:20px";modal.innerHTML=`<div class="panel pad" style="max-width:760px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between"><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span><button class="btn" id="close">Cerrar</button></div><h2 style="font-size:27px;margin:18px 0 7px">${x.title}</h2><p style="color:var(--muted);font-size:13px">${x.description}</p><div class="detail" style="margin-top:22px"><div><div class="eyebrow">Impacto potencial</div><div class="bigimpact">${money(x.impact)}</div><div class="note"><b>DATO → FÓRMULA → SUPUESTOS → RESULTADO</b><br>${x.calc||"Pendiente de cálculo con datos del cliente."}</div></div><div><div class="kv"><b>Tipo</b><span>${x.type}</span></div><div class="kv"><b>Evidencia</b><span>${x.evidence}</span></div><div class="kv"><b>Causa</b><span>${x.cause||"Hipótesis causal por validar"}</span></div><div class="kv"><b>Acción</b><span>${x.action||"Pendiente"}</span></div></div></div></div>`;document.body.appendChild(modal);modal.querySelector("#close").onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
+function leakHTML(x){return`<div class="leak" data-id="${x.id}"><div class="id">${x.id}</div><div><h3>${x.title}</h3><p>${x.type} · ${x.stage} · ${x.evidence}</p></div><div class="impact">${money(x.impact)}<small>${x.type==='Revenue Leak'?'impacto identificado':'impacto potencial'}</small></div><div><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span></div><button class="chev" onclick="openLeak('${x.id}')">›</button></div>`}
+function openLeak(id){const x=state.leaks.find(a=>a.id===id);if(!x)return;const modal=document.createElement("div");modal.style="position:fixed;inset:0;background:rgba(36,35,31,.22);z-index:100;display:grid;place-items:center;padding:20px";modal.innerHTML=`<div class="panel pad" style="max-width:760px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between"><span class="pill ${x.level==='PROBABLE'?'prob':x.level.includes('CONFIRMADO')?'conf':'pot'}">${x.level}</span><button class="btn" id="close">Cerrar</button></div><h2 style="font-size:27px;margin:18px 0 7px">${x.title}</h2><p style="color:var(--muted);font-size:13px">${x.description}</p><div class="detail" style="margin-top:22px"><div><div class="eyebrow">${x.type==="Revenue Leak"?"Impacto identificado":"Impacto potencial"}</div><div class="bigimpact">${money(x.impact)}</div><div class="note"><b>DATO → FÓRMULA → SUPUESTOS → RESULTADO</b><br>${x.calc||"Pendiente de cálculo con datos del cliente."}</div><div class="note" style="margin-top:10px"><b>Resultado real</b><br>€ recuperados: — · pendiente de ejecución y medición.</div></div><div><div class="kv"><b>Tipo</b><span>${x.type}</span></div><div class="kv"><b>Evidencia</b><span>${x.evidence}</span></div><div class="kv"><b>Nivel</b><span>${x.level}</span></div><div class="kv"><b>Causa</b><span>${x.cause||"Hipótesis causal por validar"}</span></div><div class="kv"><b>Acción</b><span>${x.action||"Pendiente"}</span></div></div></div></div>`;document.body.appendChild(modal);modal.querySelector("#close").onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
 function renderActions(){document.getElementById("actionList").innerHTML=state.actions.length?state.actions.map((a,i)=>`<div class="action ${a.done?'done':''}"><button class="check" onclick="toggleAction(${i})">${a.done?'✓':''}</button><div><h3>${a.title}</h3><p>${a.kpi} · objetivo: ${a.target}</p></div><small>${a.owner}</small><small>${a.deadline}</small></div>`).join(""):`<div class="empty"><b>La Action Queue aparecerá aquí.</b><p>Primero necesitamos un hallazgo con evidencia suficiente para convertirlo en una acción concreta.</p></div>`}
 function toggleAction(i){state.actions[i].done=!state.actions[i].done;save();renderActions()}
 function analyze(){
@@ -259,7 +259,7 @@ function analyze(){
 }
 function renderEvidence(){document.getElementById("eRows").textContent=fmtNum(state.rows.length);document.getElementById("eFields").textContent=fmtNum(state.fields.length);document.getElementById("eIncomplete").textContent=fmtNum(state.rows.filter(r=>state.fields.some(f=>r[f]===""||r[f]==null)).length);document.getElementById("eGap").textContent=fmtNum(state.gaps.length);document.getElementById("contract").innerHTML=contract().map(x=>{const ok=!!resolveField(x[0]);return`<tr><td>${x[0]}</td><td><span class="pill ${ok?'conf':'pot'}">${ok?'Disponible':'Data Gap'}</span></td><td>${x[1]}</td></tr>`}).join("")}
 function renderAll(){renderOverview();renderActions();renderEvidence()}
-const XRAY_BUILD="1312A9";
+const XRAY_BUILD="1312AA";
 function save(){localStorage.setItem("desvela-xray",JSON.stringify({...state,_build:XRAY_BUILD}))}
 function load(){
  try{
@@ -311,6 +311,71 @@ document.getElementById("qaLeak").onclick=()=>{
  state.revenue=state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0);
  state.gaps=contract().filter(([name])=>!resolveField(name)).map(([name,use,module])=>({name,use,module}));
  state.actions=state.leaks.map(x=>({title:x.action,owner:"Por asignar",kpi:"Conversión Lead → Venta",target:"Mantener baseline dentro de SLA",deadline:"Por definir",done:false}));
+ save();renderAll();go("overview");
+};
+document.getElementById("qaConfirmed").onclick=()=>{
+ state.module="M01";document.getElementById("moduleSelect").value="M01";
+ const rows=[];
+ // Controlled QA: matched cohorts. Same source, commercial, product and lead profile.
+ // 200 within SLA: 40 sales. 200 outside SLA: 20 sales. Average sale value: 3000€.
+ // Synthetic construction makes SLA the only material difference for this QA case.
+ for(let i=1;i<=400;i++){
+   const within=i<=200, sale=within?(i<=40):(i<=220);
+   const cohort=within?"Dentro SLA":"Fuera SLA";
+   rows.push({
+     Lead_ID:"QA-CONF-"+i,
+     Fuente:"QA-Matched",
+     Comercial:"Comercial QA",
+     Producto:"Producto QA",
+     Segmento:"Segmento QA",
+     Contactado:true,
+     Tiempo_primer_contacto_min:within?20:180,
+     Intentos_contacto:2,
+     Propuesta:true,
+     Venta:sale,
+     Importe_venta:sale?3000:0,
+     Etapa_actual:sale?"Venta":"Propuesta",
+     SLA_contacto_min:60,
+     Cohorte:cohort
+   });
+ }
+ state.rows=rows;state.fields=Object.keys(rows[0]);state.mapping={};
+ state.company="QA · Leak confirmado por análisis M01";
+ document.getElementById("fileInfo").innerHTML='<div class="notice"><strong>Caso QA controlado</strong> · Sintético · Evidencia suficiente para validar la clasificación <b>Revenue Leak · CONFIRMADO POR ANÁLISIS</b>. No es resultado de cliente.</div>';
+ document.getElementById("mappingPanel").style.display="block";
+ document.getElementById("rowCount").textContent="400 registros";
+ document.getElementById("mapping").innerHTML=contract().map(([name,use])=>{
+   const match=suggestField(name);
+   return '<div class="maprow"><span><b>'+name+'</b><br><small style="color:var(--muted)">'+use+'</small></span><span>→</span><select data-field="'+name+'"><option value="">Data Gap</option>'+state.fields.map(f=>'<option '+(f===match?'selected':'')+'>'+f+'</option>').join("")+'</select></div>';
+ }).join("");
+ ["Lead_ID","Fuente","Contactado","Tiempo_primer_contacto_min","Intentos_contacto","Propuesta","Venta"].forEach(n=>{if(state.fields.includes(n))state.mapping[n]=n});
+ state.leaks=[];state.gaps=[];state.actions=[];
+ const slaRows=state.rows.filter(r=>r.Tiempo_primer_contacto_min<=r.SLA_contacto_min);
+ const lateRows=state.rows.filter(r=>r.Tiempo_primer_contacto_min>r.SLA_contacto_min);
+ const slaSales=slaRows.filter(r=>truth(r.Venta)).length;
+ const lateSales=lateRows.filter(r=>truth(r.Venta)).length;
+ const baselineRate=slaRows.length?slaSales/slaRows.length:0;
+ const expectedLateSales=lateRows.length*baselineRate;
+ const deviation=Math.max(0,expectedLateSales-lateSales);
+ const avgSale=3000;
+ const impact=deviation*avgSale;
+ state.leaks=[{
+   id:"QA-RL-CONF-001",
+   type:"Revenue Leak",
+   level:"CONFIRMADO POR ANÁLISIS",
+   title:"Conversión inferior en leads fuera del SLA de primer contacto",
+   stage:"Lead → Contacto → Venta",
+   description:lateSales+" ventas en "+lateRows.length+" leads fuera de SLA frente a "+slaSales+" ventas en "+slaRows.length+" leads comparables dentro de SLA.",
+   evidence:"Análisis comparativo de cohortes emparejadas",
+   impact:impact,
+   calc:"Baseline dentro de SLA: "+(baselineRate*100).toFixed(1)+"% ("+slaSales+"/"+slaRows.length+"). Aplicado a "+lateRows.length+" leads fuera de SLA: "+expectedLateSales.toFixed(1)+" ventas esperadas. Observadas: "+lateSales+". Desviación: "+deviation.toFixed(1)+" ventas × "+money(avgSale)+" = "+money(impact)+". Supuestos: cohortes comparables por fuente, comercial, producto y segmento; mismo valor medio de venta de 3.000€; SLA como única diferencia material del caso QA.",
+   cause:"Incumplimiento del SLA de primer contacto.",
+   action:"Reducir el tiempo de primer contacto a ≤60 min y medir Lead → Venta por cohorte, manteniendo el resto de condiciones comparables.",
+   qa:true
+ }];
+ state.revenue=state.rows.reduce((s,r)=>s+parseNum(r.Importe_venta),0);
+ state.gaps=contract().filter(([name])=>!resolveField(name)).map(([name,use,module])=>({name,use,module}));
+ state.actions=state.leaks.map(x=>({title:x.action,owner:"Responsable comercial",kpi:"Lead → Venta por SLA",target:"Recuperar la desviación frente al baseline dentro de SLA",deadline:"Por definir",done:false}));
  save();renderAll();go("overview");
 };
 document.getElementById("demoM01").onclick=()=>{
